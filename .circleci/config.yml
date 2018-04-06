@@ -1,0 +1,76 @@
+version: 2
+jobs:
+  build:
+    resource_class: xlarge
+    docker:
+      - image: snoyberg/stackage:nightly
+    environment:
+      # PATH: "/usr/local/cuda-8.0/bin:/opt/bin:/opt/ghc/head/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      PATH: "/usr/local/cuda-8.0/bin:/opt/bin:/opt/ghc/8.4.1/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      BUILD_PLAN: nightly-2018-04-05
+      HOME: /root # $HOME is set to /home/stackage in the Docker image and
+                  # this drives CircleCI crazy
+      JOBS: 9
+    steps:
+      - checkout
+      # - run:
+      #     name: Remove stable GHC
+      #     command: rm -rf /opt/ghc
+      # - run:
+      #     name: Get Nightly GHC build
+      #     command: |
+      #       mkdir -p /opt/ghc/head-bindist
+      #       curl https://ghc-artifacts.s3.amazonaws.com/nightly/latest/bindist.tar.xz | tar -xJ --strip-components=1 -C /opt/ghc/head-bindist
+      #       cd /opt/ghc/head-bindist
+      #       curl https://ghc-artifacts.s3.amazonaws.com/nightly/latest/metadata.json --output metadata.json
+      #       ./configure --prefix=/opt/ghc/head
+      #       make install
+      - run:
+          name: Getting Stackage curator
+          command: |
+            mkdir -p /opt/bin
+            cd /opt/bin
+            curl https://s3.amazonaws.com/stackage-travis/stackage-curator/stackage-curator.bz2 --output stackage-curator.bz2
+            bunzip2 stackage-curator.bz2
+            chmod +x stackage-curator
+      - run:
+          name: Getting Stack
+          command: |
+            cd /opt/bin
+            curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C /opt/bin '*/stack'
+      - run:
+          name: Updating package indices
+          command: |
+            stack update
+      - run:
+          name: Obtaining build plan
+          command: |
+            cd /opt/bin
+            curl https://raw.githubusercontent.com/fpco/stackage-nightly/master/$BUILD_PLAN.yaml --output $BUILD_PLAN.yaml
+      - restore_cache:
+          keys: build-reports
+      - run:
+          name: Ensure the directory for build reports exists
+          command: |
+            mkdir -p /opt/build-reports
+      - run:
+          name: Execute the build plan
+          command: |
+            stackage-curator make-bundle --jobs $JOBS --plan-file /opt/bin/$BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --no-rebuild-cabal -v 2>&1 | tee build.log  || true
+
+      # TODO Generate report of how building of the plan went. The report
+      # should contain SHA1 of GHC commit, name of build-plan that we used,
+      # information about which packages failed to build, which packages
+      # were blocked because of failed dependencies, which tests
+      # suites/benchmarks failed to build, which test suites did not pass,
+      # etc. This can be obtained by parsing of stackage-curator's output.
+
+      - save_cache:
+          key: build-reports
+          paths: /opt/build-reports/
+
+workflows:
+  version: 2
+  triggered-build:
+    jobs:
+      - build
