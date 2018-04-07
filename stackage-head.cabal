@@ -1,0 +1,87 @@
+name:                 stackage-head
+version:              0.0.1.0
+cabal-version:        1.18
+tested-with:          GHC==8.4.1
+license:              BSD3
+license-file:         LICENSE.md
+author:               Mark Karpov <mark.karpov@tweag.io>
+maintainer:           Mark Karpov <mark.karpov@tweag.io>
+homepage:             https://github.com/tweag/stackage-head
+bug-reports:          https://github.com/tweag/stackage-head/issues
+category:             Testing
+synopsis:             Analysis and management of results of Stackage builds
+build-type:           Simple
+description:          Analysis and management of results of Stackage builds.
+extra-doc-files:      CHANGELOG.md
+                    , README.md
+
+source-repository head
+  type:               git
+  location:           https://github.com/tweag/stackage-head.git
+
+flag dev
+  description:        Turn on development settings.
+  manual:             True
+  default:            False
+
+library
+  build-depends:      aeson            >= 1.2  && < 1.4
+                    , base             >= 4.10 && < 5.0
+                    , bytestring       >= 0.10 && < 0.11
+                    , cassava          >= 0.5  && < 0.6
+                    , megaparsec       >= 6.4  && < 7.0
+                    , text             >= 0.2  && < 1.3
+                    , time             >= 1.8  && < 2.0
+                    , unordered-containers >= 0.2.8 && < 0.3
+                    , vector           >= 0.11 && < 0.13
+  exposed-modules:    Stackage.HEAD.Parser
+                    , Stackage.HEAD.Type
+  if flag(dev)
+    ghc-options:      -Wall -Werror
+  else
+    ghc-options:      -O2 -Wall
+  default-language:   Haskell2010
+
+test-suite tests
+  main-is:            Spec.hs
+  hs-source-dirs:     tests
+  type:               exitcode-stdio-1.0
+  build-depends:      base             >= 4.10 && < 5.0
+                    , bytestring       >= 0.10 && < 0.11
+                    , hspec            >= 2.0  && < 3.0
+                    , hspec-megaparsec >= 1.0  && < 2.0
+                    , megaparsec       >= 6.4  && < 7.0
+                    , stackage-head
+                    , text             >= 0.2  && < 1.3
+  other-modules:      Stackage.HEAD.ParserSpec
+                    , Stackage.HEAD.TypeSpec
+  build-tools:        hspec-discover >= 2.0 && < 3.0
+  if flag(dev)
+    ghc-options:      -Wall -Werror -Wcompat
+                      -Wincomplete-record-updates
+                      -Wincomplete-uni-patterns
+                      -Wnoncanonical-monad-instances
+                      -Wnoncanonical-monadfail-instances
+  else
+    ghc-options:      -O2 -Wall
+  default-language:   Haskell2010
+
+executable stackage-head
+  main-is:            Main.hs
+  hs-source-dirs:     app
+  build-depends:      aeson            >= 1.2  && < 1.4
+                    , base             >= 4.10 && < 5.0
+                    , bytestring       >= 0.10 && < 0.11
+                    , cassava          >= 0.5  && < 0.6
+                    , directory        >= 1.2.2 && < 1.4
+                    , filepath         >= 1.4  && < 1.5
+                    , megaparsec       >= 6.4  && < 7.0
+                    , optparse-applicative >= 0.14 && < 1.15
+                    , stackage-head
+                    , text             >= 0.2  && < 1.3
+                    , vector           >= 0.11 && < 0.13
+  if flag(dev)
+    ghc-options:      -Wall -Werror
+  else
+    ghc-options:      -O2 -Wall
+  default-language:   Haskell2010
