@@ -1,12 +1,12 @@
 # Stackage builds based on GHC HEAD
 
+[![CircleCI](https://circleci.com/gh/tweag/stackage-head/tree/master.svg?style=svg)](https://circleci.com/gh/tweag/stackage-head/tree/master)
+
 This project is an effort to build Stackage with arbitrary GHC development
 versions and, in particular, with the development HEAD. This allows us to
-detect regressions during GHC development much faster. The original blog
-post introducing the initiative can be found here:
-https://www.tweag.io/posts/2017-10-27-stackage-head.html. In addition to
-that there is a talk from HIW'17 here:
-https://www.youtube.com/watch?v=UAI-mplXUkY.
+detect regressions during GHC development much faster.
+
+## How it works
 
 The process is currently run on Circle CI twice a day and can be described
 as the following progression of steps:
@@ -37,6 +37,11 @@ as the following progression of steps:
    GHC commits).
 
 8. GHC team is notified if the build fails.
+
+## Blog posts and talks
+
+* [The original blog post introducing the initiative](https://www.tweag.io/posts/2017-10-27-stackage-head.html)
+* [A talk from HIW'17](https://www.youtube.com/watch?v=UAI-mplXUkY)
 
 ## License
 
