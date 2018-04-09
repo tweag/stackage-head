@@ -1,16 +1,13 @@
-{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Stackage.HEAD.Type
+module Stackage.HEAD.BuildResults
   ( BuildResults (..)
   , BuildStatus (..)
   , encodeBuildResults
-  , decodeBuildResults
-  , BuildInfo (..) )
+  , decodeBuildResults )
 where
 
 import Control.Monad
-import Data.Aeson
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.Csv ((.!))
@@ -21,17 +18,30 @@ import qualified Data.Csv             as Csv
 import qualified Data.HashMap.Strict  as HM
 import qualified Data.Vector          as V
 
+-- | Results of building a build plan by Stackage curator typically obtained
+-- through parsing of its log or by loading prepared build results file in
+-- CSV format.
+
 newtype BuildResults = BuildResults
   { unBuildResults :: HashMap Text BuildStatus
+    -- ^ 'BuildStatus'es per package
   } deriving (Show, Eq)
 
+-- | Build status.
+
 data BuildStatus
-  = BuildSuccess !Int !Int
-    -- ^ 'Int's are: the number of passing test suites and the number of
-    -- failing test suites
-  | BuildFailure
+  = BuildFailure
+    -- ^ The package failed to build
   | BuildUnreachable
+    -- ^ The package could not be built for some reason (e.g. its dependency
+    -- failed to build—the most common case)
+  | BuildSuccess !Int !Int
+    -- ^ Success, 'Int's are:
+    --     * the number of passing test suites
+    --     * the number of failing test suites
   deriving (Show, Eq)
+
+-- | Auxiliary definition.
 
 newtype BuildItem = BuildItem
   { unBuildItem :: (Text, BuildStatus)
@@ -67,12 +77,16 @@ instance Csv.FromRecord BuildItem where
         return $ BuildItem (packageName, buildStatus)
     | otherwise = mzero
 
+-- | Construct binary representation of given 'BuildResult's value.
+
 encodeBuildResults :: BuildResults -> BL.ByteString
 encodeBuildResults
   = Csv.encode
   . fmap BuildItem
   . HM.toList
   . unBuildResults
+
+-- | Restore 'BuildResult's from a 'BL.ByteString'.
 
 decodeBuildResults :: BL.ByteString -> Either String BuildResults
 decodeBuildResults
@@ -81,14 +95,3 @@ decodeBuildResults
             V.toList     .
             V.map unBuildItem)
   . Csv.decode Csv.NoHeader
-
--- | GHC build info as to be found in GHC metadata file.
-
-data BuildInfo = BuildInfo
-  { biSha1 :: !String
-  -- NOTE extend this record as necessary
-  }
-
-instance FromJSON BuildInfo where
-  parseJSON = withObject "GHC build metadata" $ \o ->
-    BuildInfo <$> o .: "sha1"

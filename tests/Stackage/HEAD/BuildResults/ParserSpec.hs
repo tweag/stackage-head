@@ -1,9 +1,9 @@
-module Stackage.HEAD.ParserSpec
+module Stackage.HEAD.BuildResults.ParserSpec
   ( spec )
 where
 
-import Stackage.HEAD.Parser
-import Stackage.HEAD.Type
+import Stackage.HEAD.BuildResults
+import Stackage.HEAD.BuildResults.Parser
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.IO         as TIO

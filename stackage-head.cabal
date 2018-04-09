@@ -34,8 +34,11 @@ library
                     , time             >= 1.8  && < 2.0
                     , unordered-containers >= 0.2.8 && < 0.3
                     , vector           >= 0.11 && < 0.13
-  exposed-modules:    Stackage.HEAD.Parser
-                    , Stackage.HEAD.Type
+  exposed-modules:    Stackage.HEAD.BuildDiff
+                    , Stackage.HEAD.BuildInfo
+                    , Stackage.HEAD.BuildResults
+                    , Stackage.HEAD.BuildResults.Parser
+                    , Stackage.HEAD.History
   if flag(dev)
     ghc-options:      -Wall -Werror
   else
@@ -53,8 +56,7 @@ test-suite tests
                     , megaparsec       >= 6.4  && < 7.0
                     , stackage-head
                     , text             >= 0.2  && < 1.3
-  other-modules:      Stackage.HEAD.ParserSpec
-                    , Stackage.HEAD.TypeSpec
+  other-modules:      Stackage.HEAD.BuildResults.ParserSpec
   build-tools:        hspec-discover >= 2.0 && < 3.0
   if flag(dev)
     ghc-options:      -Wall -Werror -Wcompat
@@ -72,14 +74,12 @@ executable stackage-head
   build-depends:      aeson            >= 1.2  && < 1.4
                     , base             >= 4.10 && < 5.0
                     , bytestring       >= 0.10 && < 0.11
-                    , cassava          >= 0.5  && < 0.6
                     , directory        >= 1.2.2 && < 1.4
                     , filepath         >= 1.4  && < 1.5
                     , megaparsec       >= 6.4  && < 7.0
                     , optparse-applicative >= 0.14 && < 1.15
                     , stackage-head
                     , text             >= 0.2  && < 1.3
-                    , vector           >= 0.11 && < 0.13
   if flag(dev)
     ghc-options:      -Wall -Werror
   else

@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Stackage.HEAD.Parser
+module Stackage.HEAD.BuildResults.Parser
   ( parseBuildLog )
 where
 
@@ -11,7 +11,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.List (foldl')
 import Data.Text (Text)
 import Data.Void (Void)
-import Stackage.HEAD.Type
+import Stackage.HEAD.BuildResults
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Data.HashMap.Strict as HM
@@ -19,9 +19,12 @@ import qualified Data.Text           as T
 
 type Parser = Parsec Void Text
 
+-- | Parse a build log produced by Stackage curator and turn it into
+-- 'BuildResults'.
+
 parseBuildLog
-  :: FilePath
-  -> Text
+  :: FilePath          -- ^ Name of file
+  -> Text              -- ^ Contents of file
   -> Either (ParseError Char Void) BuildResults
 parseBuildLog = parse pBuildLog
 
