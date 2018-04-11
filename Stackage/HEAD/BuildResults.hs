@@ -1,10 +1,14 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Stackage.HEAD.BuildResults
   ( BuildResults (..)
   , BuildStatus (..)
   , encodeBuildResults
-  , decodeBuildResults )
+  , decodeBuildResults
+  , failingPackages
+  , unreachablePackages
+  , succeedingPackages )
 where
 
 import Control.Monad
@@ -95,3 +99,21 @@ decodeBuildResults
             V.toList     .
             V.map unBuildItem)
   . Csv.decode Csv.NoHeader
+
+failingPackages :: BuildResults -> Int
+failingPackages = countMatching $ \case
+  BuildFailure -> True
+  _            -> False
+
+unreachablePackages :: BuildResults -> Int
+unreachablePackages = countMatching $ \case
+  BuildUnreachable -> True
+  _                -> False
+
+succeedingPackages :: BuildResults -> Int
+succeedingPackages = countMatching $ \case
+  BuildSuccess _ _ -> True
+  _                -> False
+
+countMatching :: (BuildStatus -> Bool) -> BuildResults -> Int
+countMatching f = HM.size . HM.filter f . unBuildResults
