@@ -106,7 +106,7 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
     show (failingPackages buildResults)
   putStrLn $ "  Unreachable packages: " ++
     show (unreachablePackages buildResults)
-  putStrLn $ "  Packages that build" ++
+  putStrLn $ "  Packages that build: " ++
     show (succeedingPackages buildResults)
   putStrLn $ "Extending history file " ++ historyPath
   saveHistory historyPath (extendHistory history actualItem)
