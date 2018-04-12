@@ -64,6 +64,7 @@ jobs:
             stack build
             stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir /opt/build-reports
             stack exec stackage-head -- diff --outdir /opt/build-reports
+            stack exec stackage-head -- truncate --history-length 10 --outdir /opt/build-reports
       - save_cache:
           key: stack-home
           paths: "/root/.stack"

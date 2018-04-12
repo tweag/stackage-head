@@ -5,7 +5,9 @@ module Stackage.HEAD.History
   , saveHistory
   , presentInHistory
   , extendHistory
-  , twoLastHistoryItems )
+  , twoLastHistoryItems
+  , splitHistory
+  , historyItems )
 where
 
 import Control.Exception
@@ -77,6 +79,23 @@ twoLastHistoryItems :: History -> Maybe (HistoryItem, HistoryItem)
 twoLastHistoryItems (History v)
   | V.length v < 2 = Nothing
   | otherwise      = Just (v V.! 1, v V.! 0)
+
+-- | Split the history at given index. The first returned fragment of
+-- 'History' will be of the specified length and the second one will contain
+-- the rest.
+
+splitHistory :: Int -> History -> (History, History)
+splitHistory n (History v) = (History pre, History post)
+  where
+    (pre, post) = V.splitAt n v
+
+-- | Get 'HistoryItem's as a list.
+
+historyItems :: History -> [HistoryItem]
+historyItems (History v) = V.toList v
+
+----------------------------------------------------------------------------
+-- Helpers
 
 -- | If argument of the function throws a
 -- 'System.IO.Error.doesNotExistErrorType', 'Nothing' is returned (other

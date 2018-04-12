@@ -60,7 +60,15 @@ optionsParser = Options
      (progDesc "Add a new report to the history")) <>
    command "diff"
     (info (pure diffReports)
-      (progDesc "Diff two latest history items and detect suspicious changes")))
+      (progDesc "Diff two latest history items and detect suspicious changes")) <>
+   command "truncate"
+    (info (truncateHistory
+            <$> (option auto . mconcat)
+            [ long "history-length"
+            , metavar "N"
+            , help "This many history items should be preserved"
+            ])
+     (progDesc "Truncate history and remove build reports that are too old")))
 
   <*> (strOption . mconcat)
     [ long "outdir"
@@ -164,6 +172,24 @@ diffReports optOutputDir = do
                 exitSuccess
         else do putStrLn "There are changes that need attention of GHC team.\n"
                 exitFailure
+
+-- | Truncate history leaving only N most recent history items.
+
+truncateHistory
+  :: Int               -- ^ How many history items to leave
+  -> FilePath          -- ^ Output directory containing build reports
+  -> IO ()
+truncateHistory optHistoryLength optOutputDir = do
+  let historyPath = optOutputDir </> "history.csv"
+  putStrLn $ "Loading history file " ++ historyPath
+  history <- loadHistory historyPath >>= removeEither
+  let (newHistory, oldHistory) = splitHistory optHistoryLength history
+  putStrLn $ "Saving history file " ++ historyPath
+  saveHistory historyPath newHistory
+  forM_ (historyItems oldHistory) $ \item -> do
+    let path = optOutputDir </> T.unpack (unHistoryItem item)
+    putStrLn $ "Dropping old report " ++ path
+    removeFile path
 
 ----------------------------------------------------------------------------
 -- Helpers
