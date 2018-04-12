@@ -8,7 +8,9 @@ module Stackage.HEAD.BuildResults
   , decodeBuildResults
   , failingPackages
   , unreachablePackages
-  , succeedingPackages )
+  , succeedingPackages
+  , brSize
+  , brPackages )
 where
 
 import Control.Monad
@@ -16,6 +18,7 @@ import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.Csv ((.!))
 import Data.HashMap.Strict (HashMap)
+import Data.List (sort)
 import Data.Text (Text)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
@@ -100,20 +103,36 @@ decodeBuildResults
             V.map unBuildItem)
   . Csv.decode Csv.NoHeader
 
-failingPackages :: BuildResults -> Int
-failingPackages = countMatching $ \case
+-- | Return a subset of 'BuildResults' containing failing packages.
+
+failingPackages :: BuildResults -> BuildResults
+failingPackages = selectMatching $ \case
   BuildFailure -> True
   _            -> False
 
-unreachablePackages :: BuildResults -> Int
-unreachablePackages = countMatching $ \case
+-- | Return a subset of 'BuildResults' containing unreachable packages.
+
+unreachablePackages :: BuildResults -> BuildResults
+unreachablePackages = selectMatching $ \case
   BuildUnreachable -> True
   _                -> False
 
-succeedingPackages :: BuildResults -> Int
-succeedingPackages = countMatching $ \case
+-- | Return a subset of 'BuildResults' containing succeeding packages.
+
+succeedingPackages :: BuildResults -> BuildResults
+succeedingPackages = selectMatching $ \case
   BuildSuccess _ _ -> True
   _                -> False
 
-countMatching :: (BuildStatus -> Bool) -> BuildResults -> Int
-countMatching f = HM.size . HM.filter f . unBuildResults
+selectMatching :: (BuildStatus -> Bool) -> BuildResults -> BuildResults
+selectMatching f = BuildResults . HM.filter f . unBuildResults
+
+-- | Return number of packages in 'BuildResults'.
+
+brSize :: BuildResults -> Int
+brSize = HM.size . unBuildResults
+
+-- | Get sorted list of package names from 'BuildResults'.
+
+brPackages :: BuildResults -> [Text]
+brPackages = sort . HM.keys . unBuildResults

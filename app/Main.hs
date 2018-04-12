@@ -102,12 +102,18 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
     (parseBuildLog optBuildLog rawText)
   putStrLn $ "Saving report to " ++ reportPath
   BL.writeFile reportPath (encodeBuildResults buildResults)
+  let fpackages = failingPackages buildResults
+      fpackagesSize = brSize fpackages
   putStrLn $ "  Failing packages: " ++
-    show (failingPackages buildResults)
+    show fpackagesSize
   putStrLn $ "  Unreachable packages: " ++
-    show (unreachablePackages buildResults)
+    (show . brSize . unreachablePackages) buildResults
   putStrLn $ "  Packages that build: " ++
-    show (succeedingPackages buildResults)
+    (show . brSize . succeedingPackages) buildResults
+  when (fpackagesSize > 0) $ do
+    putStrLn "Failing packages are the following:"
+    forM_ (brPackages fpackages) $ \fpackage ->
+      putStrLn $ "  - " ++ T.unpack fpackage
   putStrLn $ "Extending history file " ++ historyPath
   saveHistory historyPath (extendHistory history actualItem)
 
