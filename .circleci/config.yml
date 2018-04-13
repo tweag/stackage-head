@@ -3,81 +3,56 @@ jobs:
   build:
     resource_class: xlarge
     docker:
-      - image: snoyberg/stackage:nightly
+      - image: mrkkrp/stackage-head:0.1.0
     environment:
-      PATH: "/usr/local/cuda-8.0/bin:/opt/bin:/opt/ghc/head/bin:/usr/sbin:/usr/bin:/sbin:/bin"
       BUILD_PLAN: nightly-2018-04-05
-      HOME: /root # $HOME is set to /home/stackage in the Docker image and
-                  # this drives CircleCI crazy
       JOBS: 9
     steps:
       - checkout
       - run:
-          name: Remove stable GHC
-          command: rm -rf /opt/ghc
-      - run:
           name: Get Nightly GHC build
           command: |
-            mkdir -p /opt/ghc/head-bindist
-            curl -L https://ghc-artifacts.s3.amazonaws.com/nightly/validate-x86_64-linux/latest/bindist.tar.xz | tar -xJ --strip-components=1 -C /opt/ghc/head-bindist
+            mkdir -p $HOME/ghc-head-bindist
+            curl -L https://ghc-artifacts.s3.amazonaws.com/nightly/validate-x86_64-linux/latest/bindist.tar.xz | tar -xJ --strip-components=1 -C $HOME/ghc-head-bindist
             curl https://ghc-artifacts.s3.amazonaws.com/nightly/validate-x86_64-linux/latest/metadata.json --output metadata.json
-            cd /opt/ghc/head-bindist
-            ./configure --prefix=/opt/ghc/head
+            cd $HOME/ghc-head-bindist
+            ./configure --prefix=$HOME/ghc-head
             make install
-      - run:
-          name: Getting Stackage curator
-          command: |
-            mkdir -p /opt/bin
-            cd /opt/bin
-            curl https://s3.amazonaws.com/stackage-travis/stackage-curator/stackage-curator.bz2 --output stackage-curator.bz2
-            bunzip2 stackage-curator.bz2
-            chmod +x stackage-curator
-      - run:
-          name: Getting Stack
-          command: |
-            cd /opt/bin
-            curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C /opt/bin '*/stack'
-      - run:
-          name: Updating package indices
-          command: |
-            stack update
       - run:
           name: Obtaining build plan
           command: |
-            cd /opt/bin
             curl https://raw.githubusercontent.com/fpco/stackage-nightly/master/$BUILD_PLAN.yaml --output $BUILD_PLAN.yaml
       - restore_cache:
           keys:
-            # Restore the most recent cache for this build plan.
-            - build-reports-
+            - new-build-reports-
       - restore_cache:
           keys:
-            - stack-home
+            - new-stack-home
       - restore_cache:
           keys:
-            - stack-work
+            - new-stack-work
       - run:
           name: Execute the build plan
           command: |
-            stackage-curator make-bundle --jobs $JOBS --plan-file /opt/bin/$BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
+            stackage-curator make-bundle --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
             stack setup
             stack build
-            stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir /opt/build-reports
-            stack exec stackage-head -- diff --outdir /opt/build-reports
-            stack exec stackage-head -- truncate --history-length 10 --outdir /opt/build-reports
+            stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir $HOME/build-reports
+            stack exec stackage-head -- diff --outdir $HOME/build-reports
+            stack exec stackage-head -- truncate --history-length 10 --outdir $HOME/build-reports
       - save_cache:
-          key: stack-home
-          paths: "/root/.stack"
+          key: new-stack-home
+          paths: "/home/circleci/.stack"
       - save_cache:
-          key: stack-work
+          key: new-stack-work
           paths: ".stack-work"
       - save_cache:
           # This ensures that we push to the cache on every commit. If the
           # part with SHA1 is omitted, CircleCI may get too smart and skip
           # saving cache.
-          key: build-reports-{{ .Environment.CIRCLE_SHA1 }}
+          key: new-build-reports-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /opt/build-reports
+            - /home/circleci/build-reports
 
 workflows:
   version: 2
