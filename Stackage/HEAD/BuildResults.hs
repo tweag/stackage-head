@@ -10,7 +10,7 @@ module Stackage.HEAD.BuildResults
   , unreachablePackages
   , succeedingPackages
   , brSize
-  , brPackages )
+  , brResetBlockedBy )
 where
 
 import Control.Monad
@@ -18,7 +18,6 @@ import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.Csv ((.!))
 import Data.HashMap.Strict (HashMap)
-import Data.List (sort)
 import Data.Text (Text)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
@@ -37,8 +36,9 @@ newtype BuildResults = BuildResults
 -- | Build status.
 
 data BuildStatus
-  = BuildFailure
-    -- ^ The package failed to build
+  = BuildFailure !Int
+    -- ^ The package failed to build, the 'Int' indicates how many other
+    -- packages it made unreachable
   | BuildUnreachable
     -- ^ The package could not be built for some reason (e.g. its dependency
     -- failed to build—the most common case)
@@ -46,7 +46,7 @@ data BuildStatus
     -- ^ Success, 'Int's are:
     --     * the number of passing test suites
     --     * the number of failing test suites
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Auxiliary definition.
 
@@ -58,7 +58,7 @@ instance Csv.ToRecord BuildItem where
   toRecord (BuildItem (packageName, status)) =
     case status of
       BuildSuccess p b -> g "s" p b
-      BuildFailure     -> g "f" 0 0
+      BuildFailure _   -> g "f" 0 0
       BuildUnreachable -> g "u" 0 0
     where
       g :: ByteString -> Int -> Int -> Csv.Record
@@ -78,7 +78,7 @@ instance Csv.FromRecord BuildItem where
         tag <- v .! 1
         buildStatus <- case tag of
           "s" -> return (BuildSuccess succeedingTests failingTests)
-          "f" -> return BuildFailure
+          "f" -> return (BuildFailure 0)
           "u" -> return BuildUnreachable
           _   -> fail ("unknown tag: \"" ++ tag ++ "\"")
         return $ BuildItem (packageName, buildStatus)
@@ -107,8 +107,8 @@ decodeBuildResults
 
 failingPackages :: BuildResults -> BuildResults
 failingPackages = selectMatching $ \case
-  BuildFailure -> True
-  _            -> False
+  BuildFailure _ -> True
+  _              -> False
 
 -- | Return a subset of 'BuildResults' containing unreachable packages.
 
@@ -132,7 +132,11 @@ selectMatching f = BuildResults . HM.filter f . unBuildResults
 brSize :: BuildResults -> Int
 brSize = HM.size . unBuildResults
 
--- | Get sorted list of package names from 'BuildResults'.
+-- | Reset the numbers of packages a failing package blocks (for all failing
+-- packages).
 
-brPackages :: BuildResults -> [Text]
-brPackages = sort . HM.keys . unBuildResults
+brResetBlockedBy :: BuildResults -> BuildResults
+brResetBlockedBy = BuildResults . HM.map f . unBuildResults
+  where
+    f (BuildFailure _) = BuildFailure 0
+    f other            = other

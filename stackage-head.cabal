@@ -56,6 +56,7 @@ test-suite tests
                     , megaparsec       >= 6.4  && < 7.0
                     , stackage-head
                     , text             >= 0.2  && < 1.3
+                    , unordered-containers >= 0.2.8 && < 0.3
   other-modules:      Stackage.HEAD.BuildResults.ParserSpec
   build-tools:        hspec-discover >= 2.0 && < 3.0
   if flag(dev)
@@ -80,6 +81,7 @@ executable stackage-head
                     , optparse-applicative >= 0.14 && < 1.15
                     , stackage-head
                     , text             >= 0.2  && < 1.3
+                    , unordered-containers >= 0.2.8 && < 0.3
   if flag(dev)
     ghc-options:      -Wall -Werror
   else

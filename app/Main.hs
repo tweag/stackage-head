@@ -4,6 +4,8 @@ module Main (main) where
 
 import Control.Monad
 import Data.Bifunctor (first)
+import Data.List (sortBy)
+import Data.Ord (comparing, Down (..))
 import Data.Semigroup ((<>))
 import Options.Applicative
 import Stackage.HEAD.BuildDiff
@@ -17,6 +19,7 @@ import System.FilePath
 import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.HashMap.Strict  as HM
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 import qualified Text.Megaparsec      as M
@@ -120,8 +123,13 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
     (show . brSize . succeedingPackages) buildResults
   when (fpackagesSize > 0) $ do
     putStrLn "Failing packages are the following:"
-    forM_ (brPackages fpackages) $ \fpackage ->
-      putStrLn $ "  - " ++ T.unpack fpackage
+    let xs = sortBy (comparing (Down . snd)) . HM.toList $ unBuildResults fpackages
+    forM_ xs $ \(packageName, status) -> do
+      let n = case status of
+                BuildFailure x -> x
+                _              -> 0
+      putStrLn $ "  - " ++ T.unpack packageName
+        ++ ", blocking " ++ show n ++ " packages"
   putStrLn $ "Extending history file " ++ historyPath
   saveHistory historyPath (extendHistory history actualItem)
 

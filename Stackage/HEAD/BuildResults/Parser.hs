@@ -39,26 +39,25 @@ pBuildLog
 
 pLine :: Parser (HashMap Text BuildStatus -> HashMap Text BuildStatus)
 pLine = choice
-  [ insertResult (BuildSuccess 0 0) pBuildSuccess
+  [ insertResult (BuildSuccess 0 0) <$> pBuildSuccess
     -- NOTE The most reliable way to track build failures is to assume
     -- failure once we see the message that indicates that we configure a
     -- certain package. If later we see Copying/registering message, we
     -- overwrite that, otherwise it indeed failed.
-  , insertResult BuildFailure pConfiguring
-  , insertResult BuildUnreachable pBuildUnreachable
-  , modifyResult incTestSuites pTestRun
-  , modifyResult incTestFailures pTestFailure
+  , insertResult (BuildFailure 0) <$> pConfiguring
+  , doBoth (modifyResult incBlockedBy) (insertResult BuildUnreachable)
+      <$> pBuildUnreachable
+  , modifyResult incTestSuites <$> pTestRun
+  , modifyResult incTestFailures <$> pTestFailure
   , id <$ takeWhileP Nothing (/= '\n') <* optional eol
   ]
   where
-    insertResult status = fmap $ \package ->
+    insertResult status = \package ->
       HM.insert package status
-    modifyResult f = fmap $ \package m ->
+    modifyResult f = \package m ->
       case HM.lookup package m of
-        Just x ->
-          HM.insert package (f package x) m
-        Nothing -> error $
-          "Action on component of " ++ T.unpack package ++ " but it hasn't been built yet!"
+        Just x  -> HM.insert package (f package x) m
+        Nothing -> m
     incTestSuites package = \case
       BuildSuccess p b -> BuildSuccess (p + 1) b
       _ -> error $
@@ -67,6 +66,10 @@ pLine = choice
       BuildSuccess p b -> BuildSuccess (p - 1) (b + 1)
       _ -> error $
         "Unexpected test failure for: " ++ T.unpack package
+    incBlockedBy _ = \case
+      BuildFailure n -> BuildFailure (n + 1)
+      other -> other
+    doBoth f g = \(a, b) -> (f a . g b)
 
 pBuildSuccess :: Parser Text
 pBuildSuccess = oneLine $ do
@@ -82,13 +85,13 @@ pConfiguring = oneLine $ do
   pPendingFailures
   return packageName
 
-pBuildUnreachable :: Parser Text
+pBuildUnreachable :: Parser (Text, Text)
 pBuildUnreachable = oneLine $ do
   packageName <- pPackageName'
   lit ": DependencyFailed (PackageName \""
-  void pPackageName'
+  blockedBy <- pPackageName'
   lit "\")"
-  return packageName
+  return (blockedBy, packageName)
 
 pTestRun :: Parser Text
 pTestRun = oneLine $ do
@@ -101,7 +104,7 @@ pTestRun = oneLine $ do
   return packageName
 
 pTestFailure :: Parser Text
-pTestFailure = try $ do
+pTestFailure = oneLine $ do
   packageName <- pPackageName'
   lit ": BuildFailureException Process exited with ExitFailure "
   pSkipInteger

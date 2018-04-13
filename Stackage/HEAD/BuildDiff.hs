@@ -69,14 +69,14 @@ isChangeSuspicious (Just old) (Just new) =
   case (old, new) of
     -- There is no change, so this case won't be evaluated. But let's
     -- consider it not suspicious (nothing changes after all).
-    (BuildFailure,     BuildFailure)     -> False
+    (BuildFailure _,   BuildFailure _)     -> False
     -- A package became unreachable, this is suspicious.
-    (BuildFailure,     BuildUnreachable) -> True
+    (BuildFailure _,   BuildUnreachable) -> True
     -- Something was fixed, good. Still, we should look if any of its test
     -- suites fail.
-    (BuildFailure,     BuildSuccess _ b) -> b > 0
+    (BuildFailure _,   BuildSuccess _ b) -> b > 0
     -- New failure, always suspicious.
-    (BuildUnreachable, BuildFailure)     -> True
+    (BuildUnreachable, BuildFailure _)   -> True
     -- There is no change, so this case won't be evaluated. Still
     -- unreachable, so not suspicious.
     (BuildUnreachable, BuildUnreachable) -> False
@@ -84,7 +84,7 @@ isChangeSuspicious (Just old) (Just new) =
     -- suites fail.
     (BuildUnreachable, BuildSuccess _ b) -> b > 0
     -- Now the package fails to build, suspicious.
-    (BuildSuccess _ _, BuildFailure)     -> True
+    (BuildSuccess _ _, BuildFailure _)   -> True
     -- A package became unreachable, suspicious.
     (BuildSuccess _ _, BuildUnreachable) -> True
     -- Here we should look carefully at the results of running test suites.
@@ -136,7 +136,7 @@ prettyPrintStatus :: Maybe BuildStatus -> Text
 prettyPrintStatus Nothing  = "not present"
 prettyPrintStatus (Just x) =
   case x of
-    BuildFailure     -> "build failure"
+    BuildFailure _   -> "build failure"
     BuildUnreachable -> "build unreachable"
     BuildSuccess p b -> "build succeeded, " <>
       showInt p <> " test suites passed, " <>
