@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: mrkkrp/stackage-head:0.1.0
     environment:
-      BUILD_PLAN: nightly-2018-04-05
+      BUILD_PLAN: nightly-2018-04-13
       JOBS: 9
     steps:
       - checkout
