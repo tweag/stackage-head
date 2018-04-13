@@ -39,6 +39,7 @@ library
                     , Stackage.HEAD.BuildResults
                     , Stackage.HEAD.BuildResults.Parser
                     , Stackage.HEAD.History
+                    , Stackage.HEAD.Trac
   if flag(dev)
     ghc-options:      -Wall -Werror
   else

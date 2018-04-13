@@ -13,6 +13,7 @@ import Stackage.HEAD.BuildInfo
 import Stackage.HEAD.BuildResults
 import Stackage.HEAD.BuildResults.Parser
 import Stackage.HEAD.History
+import Stackage.HEAD.Trac
 import System.Directory
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath
@@ -62,7 +63,17 @@ optionsParser = Options
            ])
      (progDesc "Add a new report to the history")) <>
    command "diff"
-    (info (pure diffReports)
+    (info (diffReports
+            <$> (optional . strOption . mconcat)
+            [ long "build-url"
+            , metavar "URL"
+            , help "Link to this CircleCI build."
+            ]
+            <*> (optional . strOption . mconcat)
+            [ long "trac-ticket"
+            , metavar "FILE"
+            , help "Where to save auto-generated ticket"
+            ])
       (progDesc "Diff two latest history items and detect suspicious changes")) <>
    command "truncate"
     (info (truncateHistory
@@ -138,9 +149,11 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
 -- detected.
 
 diffReports
-  :: FilePath          -- ^ Output directory containing build reports
+  :: Maybe String      -- ^ Link to this CircleCI build
+  -> Maybe FilePath    -- ^ Where to save auto-generated Trac ticket
+  -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-diffReports optOutputDir = do
+diffReports mbuildUrl mtracTicket optOutputDir = do
   let historyPath = optOutputDir </> "history.csv"
   putStrLn $ "Loading history file " ++ historyPath
   history <- loadHistory historyPath >>= removeEither
@@ -148,7 +161,7 @@ diffReports optOutputDir = do
     Nothing -> do
       putStrLn "Not enough history items, so do nothing."
       exitSuccess
-    Just (olderItem, newerItem) -> do
+    Just hitems@(olderItem, newerItem) -> do
       let olderReportPath = optOutputDir
             </> T.unpack (unHistoryItem olderItem)
           newerReportPath = optOutputDir
@@ -175,9 +188,14 @@ diffReports optOutputDir = do
         TIO.putStrLn $ prettyPrintBuildDiff
           (olderItem, newerItem)
           innocentDiff
+      forM_ mtracTicket $ \tracTicket -> do
+        putStrLn $ "Saving Trac ticket to " ++ tracTicket
+        TIO.writeFile
+          tracTicket
+          (generateTracTicket mbuildUrl hitems diff)
       if isEmptyDiff suspiciousDiff
         then do putStrLn "No changes need attention of GHC team.\n"
-                exitSuccess
+                exitSuccess :: IO ()
         else do putStrLn "There are changes that need attention of GHC team.\n"
                 exitFailure
 
