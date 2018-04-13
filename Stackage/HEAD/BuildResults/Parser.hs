@@ -41,10 +41,10 @@ pLine :: Parser (HashMap Text BuildStatus -> HashMap Text BuildStatus)
 pLine = choice
   [ insertResult (BuildSuccess 0 0) pBuildSuccess
     -- NOTE The most reliable way to track build failures is to assume
-    -- failure once we see the message that indicates that the build has
-    -- started. If later we see Copying/registering message, we overwrite
-    -- that, otherwise it indeed failed.
-  , insertResult BuildFailure pBuildStarted
+    -- failure once we see the message that indicates that we configure a
+    -- certain package. If later we see Copying/registering message, we
+    -- overwrite that, otherwise it indeed failed.
+  , insertResult BuildFailure pConfiguring
   , insertResult BuildUnreachable pBuildUnreachable
   , modifyResult incTestSuites pTestRun
   , modifyResult incTestFailures pTestFailure
@@ -75,9 +75,9 @@ pBuildSuccess = oneLine $ do
   pPendingFailures
   return packageName
 
-pBuildStarted :: Parser Text
-pBuildStarted = oneLine $ do
-  lit "Building "
+pConfiguring :: Parser Text
+pConfiguring = oneLine $ do
+  lit "Configuring "
   packageName <- pPackageName
   pPendingFailures
   return packageName

@@ -1452,6 +1452,7 @@ triplesec,u,0,0
 DRBG,s,0,0
 gpolyline,s,0,0
 slack-web,u,0,0
+packdeps,f,0,0
 Imlib,s,0,0
 hscolour,s,0,0
 mighty-metropolis,u,0,0
@@ -1517,6 +1518,7 @@ pipes-extras,u,0,0
 soxlib,s,0,0
 system-filepath,s,0,0
 concise,u,0,0
+cabal-doctest,f,0,0
 algebra,u,0,0
 pcre-utils,s,0,0
 data-ordlist,s,0,0
