@@ -38,7 +38,6 @@ jobs:
             stack setup
             stack build
             stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir $HOME/build-reports
-            stack exec stackage-head -- diff --build-url $CIRCLE_BUILD_URL --trac-ticket ticket.txt --outdir $HOME/build-reports
             stack exec stackage-head -- truncate --history-length 10 --outdir $HOME/build-reports
       - save_cache:
           key: new-stack-home
@@ -53,6 +52,10 @@ jobs:
           key: new-build-reports-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/build-reports
+      - run:
+          name: Diff build results
+          command: |
+            stack exec stackage-head -- diff --build-url $CIRCLE_BUILD_URL --trac-ticket ticket.txt --outdir $HOME/build-reports
       - store_artifacts:
           path: ticket.txt
           destination: trac-ticket
