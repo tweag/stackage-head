@@ -52,7 +52,7 @@ jobs:
           # This ensures that we push to the cache on every commit. If the
           # part with SHA1 is omitted, CircleCI may get too smart and skip
           # saving cache.
-          key: new-build-reports-{{ .Environment.CIRCLE_SHA1 }}
+          key: new-build-reports-{{ .BuildNum }}
           paths:
             - /home/circleci/build-reports
       - run:
