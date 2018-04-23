@@ -3,9 +3,9 @@ jobs:
   build:
     resource_class: xlarge
     docker:
-      - image: mrkkrp/stackage-head:0.1.0
+      - image: mrkkrp/stackage-head:0.1.1
     environment:
-      BUILD_PLAN: nightly-2018-04-13
+      BUILD_PLAN: nightly-2018-04-21
       JOBS: 9
     steps:
       - checkout
@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Execute the build plan
           command: |
-            stackage-curator make-bundle --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
+            stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
             stack setup
             stack build
             stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir $HOME/build-reports
