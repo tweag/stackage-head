@@ -37,11 +37,8 @@ jobs:
             stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
             stack setup
             stack build
-            stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --target $BUILD_PLAN --outdir $HOME/build-reports
-            stack exec stackage-head -- truncate --history-length 10 --outdir $HOME/build-reports
-      - store_artifacts:
-          path: logs
-          destination: logs
+            stack exec stackage-head -- add --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
+            stack exec stackage-head -- truncate --history-length 40 --outdir $HOME/build-reports
       - save_cache:
           key: new-stack-home
           paths: "/home/circleci/.stack"

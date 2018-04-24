@@ -1,6 +1,7 @@
 module Stackage.HEAD.History
   ( History
   , HistoryItem (..)
+  , strHistoryItem
   , loadHistory
   , saveHistory
   , presentInHistory
@@ -10,13 +11,13 @@ module Stackage.HEAD.History
   , historyItems )
 where
 
-import Control.Exception
 import Data.Bifunctor (second)
 import Data.Text (Text)
 import Data.Vector (Vector)
-import System.IO.Error (isDoesNotExistError)
+import Stackage.HEAD.Utils
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
+import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as TE
 import qualified Data.Vector          as V
 
@@ -38,6 +39,11 @@ instance Csv.FromRecord HistoryItem where
 instance Csv.ToRecord HistoryItem where
   toRecord (HistoryItem txt) =
     Csv.record [TE.encodeUtf8 txt]
+
+-- | Convert 'HistoryItem' to a 'String'.
+
+strHistoryItem :: HistoryItem -> String
+strHistoryItem = T.unpack . unHistoryItem
 
 -- | Load history from given history file. If the file does not exist empty
 -- 'History' is returned.
@@ -93,19 +99,3 @@ splitHistory n (History v) = (History pre, History post)
 
 historyItems :: History -> [HistoryItem]
 historyItems (History v) = V.toList v
-
-----------------------------------------------------------------------------
--- Helpers
-
--- | If argument of the function throws a
--- 'System.IO.Error.doesNotExistErrorType', 'Nothing' is returned (other
--- exceptions propagate). Otherwise the result is returned inside a 'Just'.
-
-forgivingAbsence :: IO a -> IO (Maybe a)
-forgivingAbsence f = catchJust p
-  (Just <$> f)
-  (\() -> return Nothing)
-  where
-    p e = if isDoesNotExistError e
-            then Just ()
-            else Nothing

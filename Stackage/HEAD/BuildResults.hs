@@ -18,7 +18,7 @@ import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.Csv ((.!))
 import Data.HashMap.Strict (HashMap)
-import Data.Text (Text)
+import Stackage.HEAD.Package
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
 import qualified Data.HashMap.Strict  as HM
@@ -29,7 +29,7 @@ import qualified Data.Vector          as V
 -- CSV format.
 
 newtype BuildResults = BuildResults
-  { unBuildResults :: HashMap Text BuildStatus
+  { unBuildResults :: HashMap PackageName BuildStatus
     -- ^ 'BuildStatus'es per package
   } deriving (Show, Eq)
 
@@ -51,7 +51,7 @@ data BuildStatus
 -- | Auxiliary definition.
 
 newtype BuildItem = BuildItem
-  { unBuildItem :: (Text, BuildStatus)
+  { unBuildItem :: (PackageName, BuildStatus)
   }
 
 instance Csv.ToRecord BuildItem where

@@ -15,14 +15,16 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Stackage.HEAD.BuildResults
 import Stackage.HEAD.History
+import Stackage.HEAD.Package
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 
 -- | Diff between two 'BuildResult's.
 
 newtype BuildDiff = BuildDiff
-  { unBuildDiff :: HashMap Text ( Maybe BuildStatus
-                                , Maybe BuildStatus )
+  { unBuildDiff :: HashMap PackageName
+      ( Maybe BuildStatus
+      , Maybe BuildStatus )
   }
 
 -- | Construct a value of the 'BuildDiff' type.
@@ -110,7 +112,7 @@ prettyPrintBuildDiff (olderItem, newerItem) (BuildDiff m) =
 -- | Pretty-print a change of single package.
 
 prettyPrintChange
-  :: Text
+  :: PackageName
      -- ^ Package name
   -> (HistoryItem, Maybe BuildStatus)
      -- ^ Older history item and older status
@@ -120,7 +122,7 @@ prettyPrintChange
      -- ^ Rendition of the change
 prettyPrintChange packageName (olderItem, olderStatus) (newerItem, newerStatus)
   = T.unlines
-    [ packageName <> ":"
+    [ unPackageName packageName <> ":"
     , ind <> "at " <> unHistoryItem olderItem
     , ind2 <> prettyPrintStatus olderStatus
     , ind <> "at " <> unHistoryItem newerItem

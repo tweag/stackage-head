@@ -10,9 +10,11 @@ import Data.Semigroup ((<>))
 import Options.Applicative
 import Stackage.HEAD.BuildDiff
 import Stackage.HEAD.BuildInfo
+import Stackage.HEAD.BuildLogs
 import Stackage.HEAD.BuildResults
 import Stackage.HEAD.BuildResults.Parser
 import Stackage.HEAD.History
+import Stackage.HEAD.Package
 import Stackage.HEAD.Trac
 import System.Directory
 import System.Exit (exitFailure, exitSuccess)
@@ -49,12 +51,17 @@ optionsParser = Options
            <$> (strOption . mconcat)
            [ long "ghc-metadata"
            , metavar "METADATA-FILE"
-           , help "Location of GHC metadata file."
+           , help "Location of GHC metadata file"
            ]
            <*> (strOption . mconcat)
            [ long "build-log"
            , metavar "LOG-FILE"
-           , help "Location of Stackage curator build log."
+           , help "Location of Stackage curator build log"
+           ]
+           <*> (optional . strOption . mconcat)
+           [ long "build-per-package-dir"
+           , metavar "LOG-DIR"
+           , help "Location of directory with per-package build logs"
            ]
            <*> (strOption . mconcat)
            [ long "target"
@@ -67,7 +74,7 @@ optionsParser = Options
             <$> (optional . strOption . mconcat)
             [ long "build-url"
             , metavar "URL"
-            , help "Link to this CircleCI build."
+            , help "Link to this CircleCI build"
             ]
             <*> (optional . strOption . mconcat)
             [ long "trac-ticket"
@@ -87,7 +94,7 @@ optionsParser = Options
   <*> (strOption . mconcat)
     [ long "outdir"
     , metavar "OUTPUT-DIR"
-    , help "Directory where to save resulting reports."
+    , help "Directory where to save resulting reports"
     ]
 
 main :: IO ()
@@ -100,10 +107,11 @@ main = do
 addReport
   :: FilePath          -- ^ Location of metadata JSON file
   -> FilePath          -- ^ Location of build log
+  -> Maybe FilePath    -- ^ Location of per-package build logs
   -> String            -- ^ Target
   -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-addReport optMetadata optBuildLog optTarget optOutputDir = do
+addReport optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
   BuildInfo {..} <- B.readFile optMetadata >>=
     removeEither . Aeson.eitherDecodeStrict'
   createDirectoryIfMissing True optOutputDir
@@ -124,6 +132,11 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
     (parseBuildLog optBuildLog rawText)
   putStrLn $ "Saving report to " ++ reportPath
   BL.writeFile reportPath (encodeBuildResults buildResults)
+  forM_ optPerPackageLogs $ \srcDir -> do
+    putStrLn $ "Copying per-package build logs"
+    totalCopied <- copyPerPackageLogs
+      srcDir optOutputDir actualItem buildResults
+    putStrLn $ "Total files copied: " ++ show totalCopied
   let fpackages = failingPackages buildResults
       fpackagesSize = brSize fpackages
   putStrLn $ "  Failing packages: " ++
@@ -139,7 +152,7 @@ addReport optMetadata optBuildLog optTarget optOutputDir = do
       let n = case status of
                 BuildFailure x -> x
                 _              -> 0
-      putStrLn $ "  - " ++ T.unpack packageName
+      putStrLn $ "  - " ++ strPackageName packageName
         ++ ", blocking " ++ show n ++ " packages"
   putStrLn $ "Extending history file " ++ historyPath
   saveHistory historyPath (extendHistory history actualItem)
@@ -216,6 +229,8 @@ truncateHistory optHistoryLength optOutputDir = do
     let path = optOutputDir </> T.unpack (unHistoryItem item)
     putStrLn $ "Dropping old report " ++ path
     removeFile path
+    putStrLn $ "Dropping old per-build logs for that report"
+    dropPerPackageLogs optOutputDir item
 
 ----------------------------------------------------------------------------
 -- Helpers
