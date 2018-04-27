@@ -4,13 +4,13 @@
 module Stackage.HEAD.BuildResults
   ( BuildResults (..)
   , BuildStatus (..)
+  , buildResultsItems
   , encodeBuildResults
   , decodeBuildResults
   , failingPackages
   , unreachablePackages
   , succeedingPackages
-  , brSize
-  , brResetBlockedBy )
+  , brSize )
 where
 
 import Control.Monad
@@ -18,6 +18,8 @@ import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.Csv ((.!))
 import Data.HashMap.Strict (HashMap)
+import Data.List (sortBy)
+import Data.Ord (comparing)
 import Stackage.HEAD.Package
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
@@ -48,6 +50,13 @@ data BuildStatus
     --     * the number of failing test suites
   deriving (Show, Eq, Ord)
 
+-- | Extract components of 'BuildResults'.
+
+buildResultsItems
+  :: BuildResults
+  -> [(PackageName, BuildStatus)]
+buildResultsItems = sortBy (comparing fst) . HM.toList . unBuildResults
+
 -- | Auxiliary definition.
 
 newtype BuildItem = BuildItem
@@ -58,7 +67,7 @@ instance Csv.ToRecord BuildItem where
   toRecord (BuildItem (packageName, status)) =
     case status of
       BuildSuccess p b -> g "s" p b
-      BuildFailure _   -> g "f" 0 0
+      BuildFailure n   -> g "f" n 0
       BuildUnreachable -> g "u" 0 0
     where
       g :: ByteString -> Int -> Int -> Csv.Record
@@ -73,12 +82,12 @@ instance Csv.FromRecord BuildItem where
   parseRecord v
     | length v == 4 = do
         packageName <- v .! 0
-        succeedingTests <- v .! 2
-        failingTests <- v .! 3
-        tag <- v .! 1
+        col2 <- v .! 2
+        col3 <- v .! 3
+        tag  <- v .! 1
         buildStatus <- case tag of
-          "s" -> return (BuildSuccess succeedingTests failingTests)
-          "f" -> return (BuildFailure 0)
+          "s" -> return (BuildSuccess col2 col3)
+          "f" -> return (BuildFailure col2)
           "u" -> return BuildUnreachable
           _   -> fail ("unknown tag: \"" ++ tag ++ "\"")
         return $ BuildItem (packageName, buildStatus)
@@ -131,12 +140,3 @@ selectMatching f = BuildResults . HM.filter f . unBuildResults
 
 brSize :: BuildResults -> Int
 brSize = HM.size . unBuildResults
-
--- | Reset the numbers of packages a failing package blocks (for all failing
--- packages).
-
-brResetBlockedBy :: BuildResults -> BuildResults
-brResetBlockedBy = BuildResults . HM.map f . unBuildResults
-  where
-    f (BuildFailure _) = BuildFailure 0
-    f other            = other

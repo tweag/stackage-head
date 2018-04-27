@@ -644,7 +644,7 @@ tce-conf,s,1,0
 stringsearch,s,0,0
 picosat,s,0,0
 foundation,s,3,0
-text-show,f,0,0
+text-show,f,6,0
 data-msgpack-types,s,0,0
 zip,s,1,0
 mysql-haskell,s,0,0
@@ -1078,7 +1078,7 @@ streams,s,0,0
 utf8-string,s,0,0
 cryptohash-sha256,s,0,0
 NoHoed,s,0,0
-attoparsec-iso8601,f,0,0
+attoparsec-iso8601,f,2,0
 tasty-dejafu,s,0,0
 web-routes,s,1,0
 http-link-header,u,0,0
@@ -1621,7 +1621,7 @@ envelope,u,0,0
 smoothie,u,0,0
 wai-app-static,u,0,0
 prelude-compat,s,0,0
-aeson,f,0,0
+aeson,f,360,0
 multipart,s,0,0
 influxdb,u,0,0
 tinylog,u,0,0

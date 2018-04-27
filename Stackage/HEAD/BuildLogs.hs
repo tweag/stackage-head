@@ -8,11 +8,11 @@ where
 import Control.Monad
 import Data.IORef
 import Data.Text (Text)
+import Path.IO (forgivingAbsence, ignoringAbsence)
 import Stackage.HEAD.BuildResults
 import Stackage.HEAD.BuildResults.Parser
 import Stackage.HEAD.History
 import Stackage.HEAD.Package
-import Stackage.HEAD.Utils
 import System.Directory
 import System.FilePath
 import qualified Data.HashMap.Strict as HM
@@ -58,9 +58,9 @@ dropPerPackageLogs outputDir historyItem = ignoringAbsence $
 
 retrieveBuildLog
   :: FilePath          -- ^ Directory with build results
-  -> HistoryItem       -- ^
-  -> PackageName
-  -> IO (Maybe Text)
+  -> HistoryItem       -- ^ History item the logs belong to
+  -> PackageName       -- ^ Package of interest
+  -> IO (Maybe Text)   -- ^ The log, if present
 retrieveBuildLog outputDir historyItem packageName =
   forgivingAbsence . T.readFile $
     locatePackageLogs outputDir historyItem packageName </> buildLog
@@ -69,9 +69,9 @@ retrieveBuildLog outputDir historyItem packageName =
 
 retrieveTestLog
   :: FilePath          -- ^ Directory with build results
-  -> HistoryItem       -- ^
-  -> PackageName
-  -> IO (Maybe Text)
+  -> HistoryItem       -- ^ History item the logs belong to
+  -> PackageName       -- ^ Package of interest
+  -> IO (Maybe Text)   -- ^ The log, if present
 retrieveTestLog outputDir historyItem packageName =
   forgivingAbsence . T.readFile $
     locatePackageLogs outputDir historyItem packageName </> testLog

@@ -28,7 +28,7 @@ withFiles logPath reportPath =
   it ("transforms " ++ logPath ++ " into " ++ reportPath) $ do
     actualResults   <- loadLog logPath
     expectedResults <- loadBuildResults reportPath
-    brResetBlockedBy actualResults `shouldBe` expectedResults
+    actualResults `shouldBe` expectedResults
 
 ----------------------------------------------------------------------------
 -- Helpers

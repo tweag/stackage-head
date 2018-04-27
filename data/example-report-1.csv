@@ -214,7 +214,7 @@ ekg-core,s,0,0
 fingertree,s,0,0
 bmp,s,0,0
 temporary-rc,s,0,0
-lrucache,f,0,0
+lrucache,f,2,0
 wai,s,0,0
 bimap-server,s,0,0
 basement,s,0,0
@@ -546,7 +546,7 @@ lens-datetime,u,0,0
 executable-path,s,0,0
 megaparsec,s,0,0
 double-conversion,s,0,0
-th-orphans,f,0,0
+th-orphans,f,6,0
 groom,s,0,0
 renderable,s,0,0
 syb,s,0,0
@@ -594,7 +594,7 @@ DAV,u,0,0
 strict,s,0,0
 type-level-integers,s,0,0
 kan-extensions,u,0,0
-ghc-tcplugins-extra,f,0,0
+ghc-tcplugins-extra,f,6,0
 pcf-font,s,0,0
 monad-metrics,s,0,0
 ghc-exactprint,u,0,0
@@ -716,7 +716,7 @@ conduit-parse,s,0,0
 xml-basic,s,0,0
 type-operators,s,0,0
 tree-diff,s,0,0
-doctest,f,0,0
+doctest,f,84,0
 Ebnf2ps,s,0,0
 dlist,s,0,0
 codec,u,0,0
@@ -1518,7 +1518,7 @@ pipes-extras,u,0,0
 soxlib,s,0,0
 system-filepath,s,0,0
 concise,u,0,0
-cabal-doctest,f,0,0
+cabal-doctest,f,50,0
 algebra,u,0,0
 pcre-utils,s,0,0
 data-ordlist,s,0,0

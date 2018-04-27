@@ -4,6 +4,7 @@ module Stackage.HEAD.BuildDiff
   ( BuildDiff
   , diffBuildResults
   , isEmptyDiff
+  , buildDiffItems
   , partitionByInnocence
   , prettyPrintBuildDiff )
 where
@@ -48,6 +49,14 @@ diffBuildResults (BuildResults old) (BuildResults new) =
 
 isEmptyDiff :: BuildDiff -> Bool
 isEmptyDiff = HM.null . unBuildDiff
+
+-- | Extract components of a diff.
+
+buildDiffItems
+  :: BuildDiff
+  -> [(PackageName, ( Maybe BuildStatus
+                    , Maybe BuildStatus ))]
+buildDiffItems = sortBy (comparing fst) . HM.toList . unBuildDiff
 
 -- | Obtain (in order) innocent part of a diff and suspicious part of a
 -- diff.

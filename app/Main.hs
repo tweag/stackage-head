@@ -15,17 +15,22 @@ import Stackage.HEAD.BuildResults
 import Stackage.HEAD.BuildResults.Parser
 import Stackage.HEAD.History
 import Stackage.HEAD.Package
-import Stackage.HEAD.Trac
+import Stackage.HEAD.Utils (removeEither)
 import System.Directory
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath
+import Text.URI (URI)
 import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict  as HM
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
+import qualified Path                 as P
+import qualified Path.IO              as PIO
+import qualified Stackage.HEAD.Site   as Site
 import qualified Text.Megaparsec      as M
+import qualified Text.URI             as URI
 
 -- | Command line options.
 
@@ -48,7 +53,12 @@ optionsParser = Options
   <$> hsubparser
   (command "add"
    (info (addReport
-           <$> (strOption . mconcat)
+           <$> (option uriParser . mconcat)
+            [ long "build-url"
+            , metavar "URL"
+            , help "Link to this CircleCI build"
+            ]
+           <*> (strOption . mconcat)
            [ long "ghc-metadata"
            , metavar "METADATA-FILE"
            , help "Location of GHC metadata file"
@@ -70,17 +80,7 @@ optionsParser = Options
            ])
      (progDesc "Add a new report to the history")) <>
    command "diff"
-    (info (diffReports
-            <$> (optional . strOption . mconcat)
-            [ long "build-url"
-            , metavar "URL"
-            , help "Link to this CircleCI build"
-            ]
-            <*> (optional . strOption . mconcat)
-            [ long "trac-ticket"
-            , metavar "FILE"
-            , help "Where to save auto-generated ticket"
-            ])
+    (info (pure diffReports)
       (progDesc "Diff two latest history items and detect suspicious changes")) <>
    command "truncate"
     (info (truncateHistory
@@ -89,8 +89,15 @@ optionsParser = Options
             , metavar "N"
             , help "This many history items should be preserved"
             ])
-     (progDesc "Truncate history and remove build reports that are too old")))
-
+     (progDesc "Truncate history and remove build reports that are too old")) <>
+   command "generate-site"
+    (info (generateSite
+            <$> (strOption . mconcat)
+            [ long "site-dir"
+            , metavar "SITE-DIR"
+            , help "Where to save the site"
+            ])
+     (progDesc "Generate static web site using the data from build history")))
   <*> (strOption . mconcat)
     [ long "outdir"
     , metavar "OUTPUT-DIR"
@@ -105,13 +112,14 @@ main = do
 -- | Generate a report from log file and add it to report history.
 
 addReport
-  :: FilePath          -- ^ Location of metadata JSON file
+  :: URI               -- ^ Link to this CircleCI build
+  -> FilePath          -- ^ Location of metadata JSON file
   -> FilePath          -- ^ Location of build log
   -> Maybe FilePath    -- ^ Location of per-package build logs
   -> String            -- ^ Target
   -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-addReport optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
+addReport optBuildUrl optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
   BuildInfo {..} <- B.readFile optMetadata >>=
     removeEither . Aeson.eitherDecodeStrict'
   createDirectoryIfMissing True optOutputDir
@@ -119,6 +127,7 @@ addReport optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
       reportBasename = (optTarget ++ "-" ++ biSha1) <.> "csv"
       actualItem = HistoryItem (T.pack reportBasename)
       historyPath = optOutputDir </> "history.csv"
+      buildUrlPath = optOutputDir </> historyItemToBuildUrl actualItem
   putStrLn $ "Loading history file " ++ historyPath
   history <- loadHistory historyPath >>= removeEither
   when (presentInHistory history actualItem) $ do
@@ -132,6 +141,8 @@ addReport optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
     (parseBuildLog optBuildLog rawText)
   putStrLn $ "Saving report to " ++ reportPath
   BL.writeFile reportPath (encodeBuildResults buildResults)
+  putStrLn $ "Saving build URL to " ++ buildUrlPath
+  TIO.writeFile buildUrlPath (URI.render optBuildUrl)
   forM_ optPerPackageLogs $ \srcDir -> do
     putStrLn $ "Copying per-package build logs"
     totalCopied <- copyPerPackageLogs
@@ -162,11 +173,9 @@ addReport optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
 -- detected.
 
 diffReports
-  :: Maybe String      -- ^ Link to this CircleCI build
-  -> Maybe FilePath    -- ^ Where to save auto-generated Trac ticket
-  -> FilePath          -- ^ Output directory containing build reports
+  :: FilePath          -- ^ Output directory containing build reports
   -> IO ()
-diffReports mbuildUrl mtracTicket optOutputDir = do
+diffReports optOutputDir = do
   let historyPath = optOutputDir </> "history.csv"
   putStrLn $ "Loading history file " ++ historyPath
   history <- loadHistory historyPath >>= removeEither
@@ -174,11 +183,11 @@ diffReports mbuildUrl mtracTicket optOutputDir = do
     Nothing -> do
       putStrLn "Not enough history items, so do nothing."
       exitSuccess
-    Just hitems@(olderItem, newerItem) -> do
+    Just (olderItem, newerItem) -> do
       let olderReportPath = optOutputDir
-            </> T.unpack (unHistoryItem olderItem)
+            </> strHistoryItem olderItem
           newerReportPath = optOutputDir
-            </> T.unpack (unHistoryItem newerItem)
+            </> strHistoryItem newerItem
       putStrLn "Going to compare:"
       putStrLn ("  older report " ++ olderReportPath)
       olderResults <- BL.readFile olderReportPath >>=
@@ -201,11 +210,6 @@ diffReports mbuildUrl mtracTicket optOutputDir = do
         TIO.putStrLn $ prettyPrintBuildDiff
           (olderItem, newerItem)
           innocentDiff
-      forM_ mtracTicket $ \tracTicket -> do
-        putStrLn $ "Saving Trac ticket to " ++ tracTicket
-        TIO.writeFile
-          tracTicket
-          (generateTracTicket mbuildUrl hitems diff)
       if isEmptyDiff suspiciousDiff
         then do putStrLn "No changes need attention of GHC team.\n"
                 exitSuccess :: IO ()
@@ -232,14 +236,31 @@ truncateHistory optHistoryLength optOutputDir = do
     putStrLn $ "Dropping old per-build logs for that report"
     dropPerPackageLogs optOutputDir item
 
+-- | Generate a static web site presenting build results and diffs in
+-- readable form to the world.
+
+generateSite
+  :: FilePath          -- ^ Where to save the site
+  -> FilePath          -- ^ Output directory containing build reports
+  -> IO ()
+generateSite siteDirRaw reportsDir' = do
+  siteDir <- PIO.resolveDir' siteDirRaw
+  reportsDir <- PIO.resolveDir' reportsDir'
+  historyFile <- PIO.resolveFile reportsDir "history.csv"
+  let params = Site.SiteParams
+        { spLocation     = siteDir
+        , spBuildReports = reportsDir
+        , spHistoryFile  = historyFile
+        }
+  putStrLn $ "Generating a static site in " ++ P.fromAbsDir siteDir
+  Site.generateSite params
+  putStrLn "Done."
+
 ----------------------------------------------------------------------------
 -- Helpers
 
--- | Given 'Left', print it to stdout and then exit with non-zero status
--- code.
-
-removeEither :: Either String b -> IO b
-removeEither (Left err) = do
-  putStrLn err
-  exitFailure
-removeEither (Right x) = return x
+uriParser :: ReadM URI
+uriParser = eitherReader $ \s ->
+  case URI.mkURI (T.pack s) of
+    Nothing -> Left "failed to parse URI"
+    Just  x -> Right x
