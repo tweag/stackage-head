@@ -57,16 +57,16 @@ generateSite SiteParams {..} = do
   forM_ pairs $ \(item, br) -> do
     forM_ (HM.toList $ unBuildResults br) $ \(packageName, status) -> do
       let p = fromAbsDir spBuildReports
-      mb <- retrieveBuildLog p item packageName
-      forM_ mb $ \b -> do
-        l <- buildLogL item packageName
-        savePageAs l (buildLogP item packageName b)
-      mt <- retrieveTestLog p item packageName
-      forM_ mt $ \t -> do
-        l <- testLogL item packageName
-        savePageAs l (testLogP item packageName t)
+      buildLog <- retrieveBuildLog p item packageName
+      testLog <- retrieveTestLog p item packageName
       l <- packageL item packageName
-      savePageAs l (packageP item packageName status)
+      savePageAs l $ packageP PackagePageArgs
+        { ppaItem = item
+        , ppaPackageName = packageName
+        , ppaBuildStatus = status
+        , ppaBuildLog = buildLog
+        , ppaTestLog = testLog
+        }
     bl <- buildL item
     buildUrl <- resolveFile spBuildReports (historyItemToBuildUrl item)
       >>= fmap fixupUrl . forgivingAbsence . T.readFile . fromAbsFile

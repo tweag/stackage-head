@@ -11,9 +11,8 @@ module Stackage.HEAD.Site.HTML
   , buildP
   , DiffPageArgs (..)
   , diffP
-  , packageP
-  , buildLogP
-  , testLogP )
+  , PackagePageArgs (..)
+  , packageP )
 where
 
 import Control.Monad
@@ -101,28 +100,25 @@ buildP BuildPageArgs {..} = withDefault "Build results" $ do
       th_ [scope_ "col"] "Test"
     forM_ (buildResultsItems bpaBuildResults) $ \(packageName, status) -> do
       packageUrl <- reifyLocation (packageL bpaItem packageName)
-      buildLogUrl <- reifyLocation (buildLogL bpaItem packageName)
-      testLogUrl <- reifyLocation (testLogL bpaItem packageName)
       let (buildSummary, testSummary, classes) =
             case status of
               BuildFailure n   ->
-                ( a_ [href_ buildLogUrl] ("failing, blocking " <> toHtml (show n))
+                ( "failing, blocking " <> toHtml (show n)
                 , "no info"
                 , [class_ "table-danger"]
                 )
               BuildUnreachable ->
-                ( a_ [href_ buildLogUrl] "unreachable"
+                ( "unreachable"
                 , "no info"
                 , [class_ "table-secondary"]
                 )
               BuildSuccess passing failing ->
-                ( a_ [href_ buildLogUrl] "success"
-                , a_ [href_ testLogUrl] $ do
-                    toHtml (show passing)
-                    span_ [class_ "fa fa-check"] (return ())
-                    toHtmlRaw ("&nbsp;" :: Text)
-                    toHtml (show failing)
-                    span_ [class_ "fa fa-times"] (return ())
+                ( "success"
+                , do toHtml (show passing)
+                     span_ [class_ "fa fa-check"] (return ())
+                     toHtmlRaw ("&nbsp;" :: Text)
+                     toHtml (show failing)
+                     span_ [class_ "fa fa-times"] (return ())
                 , []
                 )
       tr_ classes $ do
@@ -201,104 +197,65 @@ renderPackageDiff (oitem, ourl) (nitem, nurl) (packageName, (ostate, nstate)) =
           "at "
           a_ [href_ ourl] (toHtml $ hip oitem)
           " (older)"
-          ul_ $ li_ (renderPackageState oitem packageName ostate)
+          ul_ $ li_ (renderPackageState ostate)
         li_ $ do
           "at "
           a_ [href_ nurl] (toHtml $ hip nitem)
           " (newer)"
-          ul_ $ li_ (renderPackageState nitem packageName nstate)
+          ul_ $ li_ (renderPackageState nstate)
 
 -- | Render a single package state.
 
-renderPackageState
-  :: HistoryItem
-  -> PackageName
-  -> Maybe BuildStatus
-  -> HtmlT IO ()
-renderPackageState item packageName mstatus =
+renderPackageState :: Maybe BuildStatus -> HtmlT IO ()
+renderPackageState mstatus =
   case mstatus of
     Nothing -> "not present"
     Just x -> do
-      buildLogUrl <- reifyLocation (buildLogL item packageName)
-      testLogUrl <- reifyLocation (testLogL item packageName)
       case x of
         BuildFailure _ ->
-          a_ [href_ buildLogUrl] "build failure"
+          "build failure"
         BuildUnreachable ->
-          a_ [href_ buildLogUrl] "build unreachable"
+          "build unreachable"
         BuildSuccess p b -> do
-          a_ [href_ buildLogUrl] "build succeeded"
-          ", "
-          a_ [href_ testLogUrl] $ toHtml $
-            show p <> " test suites passed, "
-            <> show b <> " test suites failed"
+          "build succeeded, "
+          toHtml $ show p <> " test suites passed, " <>
+                   show b <> " test suites failed"
+
+data PackagePageArgs = PackagePageArgs
+  { ppaItem :: HistoryItem
+  , ppaPackageName :: PackageName
+  , ppaBuildStatus :: BuildStatus
+  , ppaBuildLog :: Maybe Text
+  , ppaTestLog :: Maybe Text
+  }
 
 -- | Render information about a package in a build.
 
 packageP
-  :: HistoryItem
-  -> PackageName
-  -> BuildStatus
+  :: PackagePageArgs
   -> HtmlT IO ()
-packageP item packageName status = withDefault "Package" $ do
-  buildUrl <- reifyLocation (buildL item)
-  packageUrl <- reifyLocation (packageL item packageName)
-  buildLogUrl <- reifyLocation (buildLogL item packageName)
-  testLogUrl <- reifyLocation (testLogL item packageName)
+packageP PackagePageArgs {..} = withDefault "Package" $ do
+  buildUrl <- reifyLocation (buildL ppaItem)
+  packageUrl <- reifyLocation (packageL ppaItem ppaPackageName)
   breadcrumb [ ("Overview", overviewUrl)
-             , ("Build " <> hip item, buildUrl)
-             , (unPackageName packageName, packageUrl)
+             , ("Build " <> hip ppaItem, buildUrl)
+             , (unPackageName ppaPackageName, packageUrl)
              ]
-  let buildLogBtn = btnLink buildLogUrl "Build log"
-      testLogBtn = btnLink testLogUrl "Test log"
-  case status of
+  case ppaBuildStatus of
     BuildFailure n -> do
-      buildLogBtn
       p_ . toHtml $ "The build failed. It prevents " <>
         show n <> " other packages from building."
     BuildUnreachable ->
       p_ $ "The build is unreachable."
     BuildSuccess p n -> do
-      buildLogBtn
-      testLogBtn
       p_ . toHtml $ "The build succeeded. " <> show p <>
         " test suites succeeded, " <> show n <> " failed."
-
--- | Render a build log.
-
-buildLogP
-  :: HistoryItem
-  -> PackageName
-  -> Text
-  -> HtmlT IO ()
-buildLogP item packageName l = withDefault "Build log" $ do
-  buildUrl   <- reifyLocation (buildL item)
-  packageUrl <- reifyLocation (packageL item packageName)
-  logUrl     <- reifyLocation (buildLogL item packageName)
-  breadcrumb [ ("Overview", overviewUrl)
-             , ("Build " <> hip item, buildUrl)
-             , (unPackageName packageName, packageUrl)
-             , ("Build log", logUrl)
-             ]
-  pre_ $ code_ $ toHtml l
-
--- | Reder a test log.
-
-testLogP
-  :: HistoryItem
-  -> PackageName
-  -> Text
-  -> HtmlT IO ()
-testLogP item packageName l = withDefault "Test log" $ do
-  buildUrl   <- reifyLocation (buildL item)
-  packageUrl <- reifyLocation (packageL item packageName)
-  logUrl     <- reifyLocation (testLogL item packageName)
-  breadcrumb [ ("Overview", overviewUrl)
-             , ("Build " <> hip item, buildUrl)
-             , (unPackageName packageName, packageUrl)
-             , ("Test log", logUrl)
-             ]
-  pre_ $ code_ $ toHtml l
+  forM_ ppaBuildLog $ \buildLog -> do
+    h3_ "Build log"
+    pre_ $ code_ $ toHtml buildLog
+  forM_ ppaTestLog $ \testLog -> do
+    h3_ "Test log"
+    pre_ $ code_ $ toHtml testLog
 
 ----------------------------------------------------------------------------
 -- Helpers

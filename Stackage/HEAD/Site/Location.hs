@@ -6,9 +6,7 @@ module Stackage.HEAD.Site.Location
   , overviewUrl
   , buildL
   , diffL
-  , packageL
-  , buildLogL
-  , testLogL )
+  , packageL )
 where
 
 import Control.Monad.Catch
@@ -37,11 +35,3 @@ diffL hi0 hi1 = mkLocation ("diff" :| [x])
 packageL :: MonadThrow m => HistoryItem -> PackageName -> m Location
 packageL hi (PackageName n) = mkLocation
   ("build" :| [hip hi, n, "overview.html"])
-
-buildLogL :: MonadThrow m => HistoryItem -> PackageName -> m Location
-buildLogL hi (PackageName n) = mkLocation
-  ("build" :| [hip hi, n, "build-log.html"])
-
-testLogL :: MonadThrow m => HistoryItem -> PackageName -> m Location
-testLogL hi (PackageName n) = mkLocation
-  ("build" :| [hip hi, n, "test-log.html"])
