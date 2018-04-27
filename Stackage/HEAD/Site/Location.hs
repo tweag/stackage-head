@@ -21,7 +21,7 @@ import Stackage.HEAD.Site.Type
 import qualified Text.URI  as URI
 
 overviewL :: Location
-overviewL = $(location ["overview.html"])
+overviewL = $(location ["index.html"])
 
 overviewUrl :: Text
 overviewUrl = URI.render (locationUri overviewL)

@@ -60,6 +60,12 @@ jobs:
           name: Generate static site with the results
           command: |
             stack exec stackage-head -- generate-site --site-dir $HOME/site --outdir $HOME/build-reports
+      - run:
+          name: Upload the site to S3 bucket
+          command: |
+            cd $HOME/site
+            s3cmd put -P index.html s3://stackage-head/
+            s3cmd sync --access_key=$S3_ACCESS_KEY --secret-key=$S3_SECRET_KEY --region=$S3_REGION --delete-removed --skip-existing -P * s3://stackage-head/
 
 workflows:
   version: 2
