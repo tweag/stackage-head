@@ -3,7 +3,7 @@ jobs:
   build:
     resource_class: xlarge
     docker:
-      - image: mrkkrp/stackage-head:0.1.1
+      - image: mrkkrp/stackage-head:0.1.2
     environment:
       BUILD_PLAN: nightly-2018-04-26
       JOBS: 9

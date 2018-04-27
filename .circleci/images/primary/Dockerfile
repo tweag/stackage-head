@@ -2,6 +2,8 @@ FROM snoyberg/stackage:nightly
 
 ENV PATH /usr/local/cuda-8.0/bin:/home/circleci/bin:/home/circleci/ghc-head/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+RUN apt-get install -qy s3cmd
+
 # Remove stable GHC
 RUN rm -rf /opt/ghc
 
