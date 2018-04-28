@@ -107,7 +107,7 @@ presentInHistory (History v) report = V.elem report v
 -- | Append new item to the history.
 
 extendHistory :: History -> HistoryItem -> History
-extendHistory (History v) reportBasename = do
+extendHistory (History v) reportBasename =
   History (V.cons reportBasename v)
 
 -- | Get two last history items (in order: older, newer). If there are not

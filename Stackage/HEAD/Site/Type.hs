@@ -48,7 +48,7 @@ type DiffTable = HashMap HistoryItem (HistoryItem, (BuildDiff, BuildDiff))
 
 -- | Location of a page or resource on the site.
 
-data Location = Location
+newtype Location = Location
   { unLocation :: NonEmpty (RText 'PathPiece)
   } deriving (Typeable, Data)
 
@@ -68,7 +68,7 @@ mkLocation pieces = do
 location
   :: [Text]            -- ^ Plain list is just easier to type
   -> Q Exp
-location pieces = do
+location pieces =
   case NE.nonEmpty pieces of
     Nothing -> fail "the input collection should not be empty"
     Just ps -> mkLocation ps >>= dataToExpQ (fmap liftText . cast)

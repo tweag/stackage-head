@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE MultiWayIf          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -189,9 +188,11 @@ renderPackageDiff
                    , Maybe BuildStatus ))
   -> HtmlT IO ()
 renderPackageDiff (oitem, ourl) (nitem, nurl) (packageName, (ostate, nstate)) =
-  div_ [class_ "card my-3"] $ do
+  div_ [class_ "card my-3"] $
     div_ [class_ "card-body"] $ do
-      h5_ [class_ "card-title"] (toHtml (unPackageName packageName))
+      h5_ [class_ "card-title"] $ do
+        packageUrl <- reifyLocation (packageL nitem packageName)
+        a_ [href_ packageUrl] (toHtml (unPackageName packageName))
       ul_ $ do
         li_ $ do
           "at "
@@ -210,7 +211,7 @@ renderPackageState :: Maybe BuildStatus -> HtmlT IO ()
 renderPackageState mstatus =
   case mstatus of
     Nothing -> "not present"
-    Just x -> do
+    Just x ->
       case x of
         BuildFailure _ ->
           "build failure"
@@ -242,12 +243,12 @@ packageP PackagePageArgs {..} = withDefault "Package" $ do
              , (unPackageName ppaPackageName, packageUrl)
              ]
   case ppaBuildStatus of
-    BuildFailure n -> do
+    BuildFailure n ->
       p_ . toHtml $ "The build failed. It prevents " <>
         show n <> " other packages from building."
     BuildUnreachable ->
-      p_ $ "The build is unreachable."
-    BuildSuccess p n -> do
+      p_ "The build is unreachable."
+    BuildSuccess p n ->
       p_ . toHtml $ "The build succeeded. " <> show p <>
         " test suites succeeded, " <> show n <> " failed."
   forM_ ppaBuildLog $ \buildLog -> do
@@ -280,7 +281,7 @@ withDefault title inner = do
         div_ [class_ "container"] $
           a_ [class_ "navbar-brand", href_ overviewUrl, title_ siteTitle] $
             toHtml siteTitle
-      main_ $ do
+      main_ $
         div_ [class_ "py-5"] $
           div_ [class_ "container"] inner
       scriptResource jqueryScript
@@ -291,7 +292,7 @@ withDefault title inner = do
 
 breadcrumb :: forall m. Monad m => [(Text, Text)] -> HtmlT m ()
 breadcrumb [] = return ()
-breadcrumb xs' = do
+breadcrumb xs' =
   nav_ [makeAttribute "aria-label" "breadcrumb"] $
     ol_ [class_ "breadcrumb"] $ do
       let x  = last xs'

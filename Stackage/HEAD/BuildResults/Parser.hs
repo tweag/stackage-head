@@ -64,9 +64,9 @@ pLine = choice
   , id <$ takeWhileP Nothing (/= '\n') <* optional eol
   ]
   where
-    insertResult status = \package ->
+    insertResult status package =
       HM.insert package status
-    modifyResult f = \package m ->
+    modifyResult f package m =
       case HM.lookup package m of
         Just x  -> HM.insert package (f package x) m
         Nothing -> m
@@ -81,7 +81,7 @@ pLine = choice
     incBlockedBy _ = \case
       BuildFailure n -> BuildFailure (n + 1)
       other -> other
-    doBoth f g = \(a, b) -> (f a . g b)
+    doBoth f g (a, b) = f a . g b
 
 pBuildSuccess :: Parser PackageName
 pBuildSuccess = oneLine $ do
