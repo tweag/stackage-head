@@ -57,6 +57,11 @@ pLine = choice
     -- certain package. If later we see Copying/registering message, we
     -- overwrite that, otherwise it indeed failed.
   , insertResult (BuildFailure 0) <$> pConfiguring
+    -- NOTE Sometimes packages fail to even unpack, but it looks like not
+    -- all packages require unpacking always. So by the same logic we
+    -- register unpacking and assume that the package failed until its
+    -- registration is reported.
+  , insertResult (BuildFailure 0) <$> pUnpacking
   , doBoth (modifyResult incBlockedBy) (insertResult BuildUnreachable)
       <$> pBuildUnreachable
   , modifyResult incTestSuites   <$> pTestRun
@@ -94,6 +99,16 @@ pConfiguring :: Parser PackageName
 pConfiguring = oneLine $ do
   lit "Configuring "
   packageName <- pPackageName
+  pPendingFailures
+  return packageName
+
+pUnpacking :: Parser PackageName
+pUnpacking = oneLine $ do
+  lit "Unpacking "
+  packageName <- pPackageName
+  pSkipSha256
+  lit " "
+  pSkipReason
   pPendingFailures
   return packageName
 
@@ -165,3 +180,14 @@ pSkipInteger = void $ takeWhile1P (Just "digit") isDigit
 
 isPackageNameChar :: Char -> Bool
 isPackageNameChar x = isAlphaNum x || x == '-'
+
+pSkipSha256 :: Parser ()
+pSkipSha256 = do
+  lit "@sha256:"
+  void (count 64 hexDigitChar)
+
+pSkipReason :: Parser ()
+pSkipReason = do
+  lit "(reason: "
+  void $ takeWhileP Nothing (/= ')')
+  lit ")"

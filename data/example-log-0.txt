@@ -2499,7 +2499,7 @@ Unpacking prettyclass-1.0.0.0@sha256:263553048e05e1aa43532752ec97e5b1cc7f8d77c4b
 Unpacking projectroot-0.2.0.1@sha256:73002eca144efd0a55b1f412c6a9ab8f2b1ba896230603f690b7a0e84c988857 (reason: withConfiged: toBuild) (pending: 180, failures: 0)
 Unpacking managed-1.0.6@sha256:1da884195081d70b6bec475db985017431eb42564bf648ad6968640ddafe25b0 (reason: withConfiged: toBuild) (pending: 538, failures: 0)
 Unpacking error-util-0.0.1.2@sha256:46e6e27908583886026a0fbdb03c5e46583bc2560716d6c121abf49cfc3b7e4c (reason: withConfiged: toBuild) (pending: 1153, failures: 0)
-Configuring drawille-0.1.2.0 (pending: 1721, failures: 0)
+drawille: Process exited with ExitFailure 1: stack unpack drawille-0.1.2.0sha256:41a1627890649690d76261040c67779fa2e6fa2eb0ff912ee24891ea21b7b2f7 (pending: 1153, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 Configuring ratio-int-0.1.2 (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
@@ -2517,7 +2517,6 @@ Configuring error-util-0.0.1.2 (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 Configuring managed-1.0.6 (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
-./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/drawille-0.1.2.0 --htmldir=/home/stackage/project/builds/nightly/doc/drawille-0.1.2.0 --haddockdir=/home/stackage/project/builds/nightly/doc/drawille-0.1.2.0 (pending: 1721, failures: 0)
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/projectroot-0.2.0.1 --htmldir=/home/stackage/project/builds/nightly/doc/projectroot-0.2.0.1 --haddockdir=/home/stackage/project/builds/nightly/doc/projectroot-0.2.0.1 (pending: 1721, failures: 0)
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/post-mess-age-0.2.1.0 --htmldir=/home/stackage/project/builds/nightly/doc/post-mess-age-0.2.1.0 --haddockdir=/home/stackage/project/builds/nightly/doc/post-mess-age-0.2.1.0 (pending: 1721, failures: 0)
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/prettyclass-1.0.0.0 --htmldir=/home/stackage/project/builds/nightly/doc/prettyclass-1.0.0.0 --haddockdir=/home/stackage/project/builds/nightly/doc/prettyclass-1.0.0.0 (pending: 1721, failures: 0)
@@ -2526,8 +2525,6 @@ ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/buil
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/extensible-exceptions-0.1.1.4 --htmldir=/home/stackage/project/builds/nightly/doc/extensible-exceptions-0.1.1.4 --haddockdir=/home/stackage/project/builds/nightly/doc/extensible-exceptions-0.1.1.4 (pending: 1721, failures: 0)
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/error-util-0.0.1.2 --htmldir=/home/stackage/project/builds/nightly/doc/error-util-0.0.1.2 --haddockdir=/home/stackage/project/builds/nightly/doc/error-util-0.0.1.2 (pending: 1721, failures: 0)
 ./Setup configure --package-db=clear --package-db=global --package-db=/home/stackage/project/builds/nightly/pkgdb --libdir=/home/stackage/project/builds/nightly/lib --bindir=/home/stackage/project/builds/nightly/bin --datadir=/home/stackage/project/builds/nightly/share --libexecdir=/home/stackage/project/builds/nightly/libexec --sysconfdir=/home/stackage/project/builds/nightly/etc --docdir=/home/stackage/project/builds/nightly/doc/managed-1.0.6 --htmldir=/home/stackage/project/builds/nightly/doc/managed-1.0.6 --haddockdir=/home/stackage/project/builds/nightly/doc/managed-1.0.6 (pending: 1721, failures: 0)
-Building drawille-0.1.2.0 (pending: 1721, failures: 0)
-ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 Building prettyclass-1.0.0.0 (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 Building post-mess-age-0.2.1.0 (pending: 1721, failures: 0)
@@ -2566,7 +2563,6 @@ ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/buil
 ./Setup register (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 Unpacking blake2-0.2.0@sha256:2175e66e5f4a72b47407cb79b252b0adc5d82f34a958418b75e1d7871187b507 (reason: withConfiged: toBuild) (pending: 1721, failures: 0)
-Copying/registering drawille-0.1.2.0 (pending: 1721, failures: 0)
 ghc -clear-package-db -global-package-db -package-db=/home/stackage/project/builds/nightly/pkgdb Setup (pending: 1721, failures: 0)
 ./Setup register (pending: 1721, failures: 0)
 ./Setup copy (pending: 1721, failures: 0)
@@ -26038,8 +26034,7 @@ Test build pandoc-citeproc-0.14.3 (pending: 2, failures: 4)
 Benchmark configure log-0.9.0.1 (pending: 2, failures: 4)
 Benchmark build log-0.9.0.1 (pending: 2, failures: 4)
 Test run pandoc-citeproc-0.14.3 (test-pandoc-citeproc) (pending: 1, failures: 4)
-stackage-curator: 
-
+stackage-curator:
 
 aeson-typescript: BuildFailureException Process exited with ExitFailure 1: dist/build/aeson-typescript-test/aeson-typescript-test
 directory-tree: BuildFailureException Process exited with ExitFailure 1: dist/build/test/test
@@ -26063,4 +26058,3 @@ rattletrap-4.0.6: unexpected test success
 http-link-header-1.0.3: unexpected test success
 bitx-bitcoin-0.12.0.0: unexpected test success
 pandoc-citeproc-0.14.3: unexpected test success
-
