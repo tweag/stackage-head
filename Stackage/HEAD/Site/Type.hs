@@ -16,6 +16,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromJust)
@@ -27,6 +28,7 @@ import Language.Haskell.TH.Syntax (lift, dataToExpQ)
 import Path
 import Stackage.HEAD.BuildDiff
 import Stackage.HEAD.History
+import Stackage.HEAD.Package
 import Text.URI
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text          as T
@@ -38,6 +40,7 @@ data SiteParams = SiteParams
   { spLocation     :: !(Path Abs Dir)
   , spBuildReports :: !(Path Abs Dir)
   , spHistoryFile  :: !(Path Abs File)
+  , spFlakyPkgs :: !(HashSet PackageName)
   }
 
 -- | A map from newer history item in diff to older history item and the

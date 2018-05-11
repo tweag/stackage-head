@@ -4,6 +4,7 @@ module Main (main) where
 
 import Control.Monad
 import Data.Bifunctor (first)
+import Data.HashSet (HashSet)
 import Data.List (sortBy)
 import Data.Ord (comparing, Down (..))
 import Data.Semigroup ((<>))
@@ -24,6 +25,7 @@ import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString      as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict  as HM
+import qualified Data.HashSet         as HE
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 import qualified Path                 as P
@@ -35,8 +37,10 @@ import qualified Text.URI             as URI
 -- | Command line options.
 
 data Options = Options
-  { optCommand :: FilePath -> IO ()
+  { optCommand :: HashSet PackageName -> FilePath -> IO ()
     -- ^ Command
+  , optFlakyPkgs :: HashSet PackageName
+    -- ^ Flaky packages
   , optOutputDir :: FilePath
     -- ^ Output directory
   }
@@ -98,6 +102,11 @@ optionsParser = Options
             , help "Where to save the site"
             ])
      (progDesc "Generate static web site using the data from build history")))
+  <*> (toFlakySet <$> many ((strOption . mconcat)
+    [ long "flaky"
+    , metavar "PKG"
+    , help "Flaky package, changes in its state should always be considered innocent"
+    ]))
   <*> (strOption . mconcat)
     [ long "outdir"
     , metavar "OUTPUT-DIR"
@@ -107,7 +116,7 @@ optionsParser = Options
 main :: IO ()
 main = do
   Options {..} <- execParser optionsParserInfo
-  optCommand optOutputDir
+  optCommand optFlakyPkgs optOutputDir
 
 -- | Generate a report from log file and add it to report history.
 
@@ -117,9 +126,10 @@ addReport
   -> FilePath          -- ^ Location of build log
   -> Maybe FilePath    -- ^ Location of per-package build logs
   -> String            -- ^ Target
+  -> HashSet PackageName -- ^ Flaky packages
   -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-addReport optBuildUrl optMetadata optBuildLog optPerPackageLogs optTarget optOutputDir = do
+addReport optBuildUrl optMetadata optBuildLog optPerPackageLogs optTarget _ optOutputDir = do
   BuildInfo {..} <- B.readFile optMetadata >>=
     removeEither . Aeson.eitherDecodeStrict'
   createDirectoryIfMissing True optOutputDir
@@ -144,7 +154,7 @@ addReport optBuildUrl optMetadata optBuildLog optPerPackageLogs optTarget optOut
   putStrLn $ "Saving build URL to " ++ buildUrlPath
   TIO.writeFile buildUrlPath (URI.render optBuildUrl)
   forM_ optPerPackageLogs $ \srcDir -> do
-    putStrLn $ "Copying per-package build logs"
+    putStrLn "Copying per-package build logs"
     totalCopied <- copyPerPackageLogs
       srcDir optOutputDir actualItem buildResults
     putStrLn $ "Total files copied: " ++ show totalCopied
@@ -173,9 +183,10 @@ addReport optBuildUrl optMetadata optBuildLog optPerPackageLogs optTarget optOut
 -- detected.
 
 diffReports
-  :: FilePath          -- ^ Output directory containing build reports
+  :: HashSet PackageName -- ^ Flaky packages
+  -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-diffReports optOutputDir = do
+diffReports flakyPkgs optOutputDir = do
   let historyPath = optOutputDir </> "history.csv"
   putStrLn $ "Loading history file " ++ historyPath
   history <- loadHistory historyPath >>= removeEither
@@ -196,7 +207,7 @@ diffReports optOutputDir = do
       newerResults <- BL.readFile newerReportPath >>=
         removeEither . decodeBuildResults
       let diff = diffBuildResults olderResults newerResults
-          (innocentDiff, suspiciousDiff) = partitionByInnocence diff
+          (innocentDiff, suspiciousDiff) = partitionByInnocence flakyPkgs diff
       when (isEmptyDiff diff) $ do
         putStrLn "No changes detected, nothing to do."
         exitSuccess
@@ -220,9 +231,10 @@ diffReports optOutputDir = do
 
 truncateHistory
   :: Int               -- ^ How many history items to leave
+  -> HashSet PackageName -- ^ Flaky packages
   -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-truncateHistory optHistoryLength optOutputDir = do
+truncateHistory optHistoryLength _ optOutputDir = do
   let historyPath = optOutputDir </> "history.csv"
   putStrLn $ "Loading history file " ++ historyPath
   history <- loadHistory historyPath >>= removeEither
@@ -241,9 +253,10 @@ truncateHistory optHistoryLength optOutputDir = do
 
 generateSite
   :: FilePath          -- ^ Where to save the site
+  -> HashSet PackageName -- ^ Flaky packages
   -> FilePath          -- ^ Output directory containing build reports
   -> IO ()
-generateSite siteDirRaw reportsDir' = do
+generateSite siteDirRaw flakyPkgs reportsDir' = do
   siteDir <- PIO.resolveDir' siteDirRaw
   reportsDir <- PIO.resolveDir' reportsDir'
   historyFile <- PIO.resolveFile reportsDir "history.csv"
@@ -251,6 +264,7 @@ generateSite siteDirRaw reportsDir' = do
         { spLocation     = siteDir
         , spBuildReports = reportsDir
         , spHistoryFile  = historyFile
+        , spFlakyPkgs    = flakyPkgs
         }
   putStrLn $ "Generating a static site in " ++ P.fromAbsDir siteDir
   Site.generateSite params
@@ -264,3 +278,6 @@ uriParser = eitherReader $ \s ->
   case URI.mkURI (T.pack s) of
     Nothing -> Left "failed to parse URI"
     Just  x -> Right x
+
+toFlakySet :: [String] -> HashSet PackageName
+toFlakySet = HE.fromList . fmap (PackageName . T.pack)

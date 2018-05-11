@@ -10,6 +10,7 @@ module Stackage.HEAD.BuildDiff
 where
 
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
 import Data.List (sortBy)
 import Data.Ord (comparing)
 import Data.Semigroup ((<>))
@@ -18,6 +19,7 @@ import Stackage.HEAD.BuildResults
 import Stackage.HEAD.History
 import Stackage.HEAD.Package
 import qualified Data.HashMap.Strict as HM
+import qualified Data.HashSet        as HE
 import qualified Data.Text           as T
 
 -- | Diff between two 'BuildResult's.
@@ -61,13 +63,18 @@ buildDiffItems = sortBy (comparing fst) . HM.toList . unBuildDiff
 -- | Obtain (in order) innocent part of a diff and suspicious part of a
 -- diff.
 
-partitionByInnocence :: BuildDiff -> (BuildDiff, BuildDiff)
-partitionByInnocence (BuildDiff m) =
+partitionByInnocence
+  :: HashSet PackageName -- ^ Packages with flaky test suites
+  -> BuildDiff
+  -> (BuildDiff, BuildDiff)
+partitionByInnocence flaky (BuildDiff m) =
   ( BuildDiff innocent
   , BuildDiff suspicious )
   where
     innocent   = HM.difference m suspicious
-    suspicious = HM.filter (uncurry isChangeSuspicious) m
+    suspicious = HM.filterWithKey checkSuspicious m
+    checkSuspicious packageName (x,y) =
+      not (HE.member packageName flaky) && isChangeSuspicious x y
 
 -- | Return 'True' if given progression of package build statuses is
 -- suspicious and should be noticed by the GHC team.

@@ -7,6 +7,7 @@ jobs:
     environment:
       BUILD_PLAN: nightly-2018-04-26
       JOBS: 9
+      FLAKY_PKGS: "--flaky threads --flaky lifted-async --flaky fsnotify-conduit"
     steps:
       - checkout
       - run:
@@ -55,7 +56,7 @@ jobs:
       - run:
           name: Generate static site with the results
           command: |
-            stack exec stackage-head -- generate-site --site-dir $HOME/site --outdir $HOME/build-reports
+            stack exec stackage-head -- generate-site --site-dir $HOME/site $FLAKY_PKGS --outdir $HOME/build-reports
       - run:
           name: Upload the site to S3 bucket
           command: |
@@ -66,7 +67,7 @@ jobs:
       - run:
           name: Diff build results
           command: |
-            stack exec stackage-head -- diff --outdir $HOME/build-reports
+            stack exec stackage-head -- diff $FLAKY_PKGS --outdir $HOME/build-reports
 
 workflows:
   version: 2

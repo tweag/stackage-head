@@ -48,7 +48,7 @@ generateSite SiteParams {..} = do
         (\(oldItem, oldResults) (newItem, newResults) ->
             ( newItem
             , ( oldItem
-              , partitionByInnocence
+              , partitionByInnocence spFlakyPkgs
                 (diffBuildResults oldResults newResults)
               )))
         (drop 1 pairs)
