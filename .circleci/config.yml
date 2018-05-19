@@ -7,7 +7,7 @@ jobs:
     environment:
       BUILD_PLAN: nightly-2018-04-26
       JOBS: 9
-      FLAKY_PKGS: "--flaky threads --flaky lifted-async --flaky fsnotify-conduit"
+      FLAKY_PKGS: "--flaky threads --flaky lifted-async --flaky fsnotify-conduit --flaky hspec-core --flaky stm-delay"
     steps:
       - checkout
       - run:
