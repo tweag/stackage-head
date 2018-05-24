@@ -39,7 +39,7 @@ jobs:
             stack setup
             stack build
             stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
-            stack exec stackage-head -- truncate --history-length 10 --outdir $HOME/build-reports
+            stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
       - save_cache:
           key: new-stack-home
           paths: "/home/circleci/.stack"
