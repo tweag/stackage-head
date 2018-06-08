@@ -1,6 +1,29 @@
 version: 2
 jobs:
-  build:
+  triggered_build:
+    docker:
+      - image: mrkkrp/haskell-ghc-8.4.2:0.1.1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - stack-home-{{ checksum "stack.yaml" }}
+            - stack-home-
+      - restore_cache:
+          keys:
+            - stack-work-{{ checksum "stack.yaml" }}
+            - stack-work-
+      - run: stack setup
+      - run: stack build --flag stackage-head:dev
+      - run: stack test
+      - save_cache:
+          key: stack-home-{{ checksum "stack.yaml" }}
+          paths: "~/.stack"
+      - save_cache:
+          key: stack-work-{{ checksum "stack.yaml" }}
+          paths: ".stack-work"
+
+  scheduled_build:
     resource_class: xlarge
     docker:
       - image: mrkkrp/stackage-head:0.1.2
@@ -28,10 +51,12 @@ jobs:
             - new-build-reports-
       - restore_cache:
           keys:
-            - new-stack-home
+            - stack-home-{{ checksum "stack.yaml" }}
+            - stack-home-
       - restore_cache:
           keys:
-            - new-stack-work
+            - stack-work-{{ checksum "stack.yaml" }}
+            - stack-work-
       - run:
           name: Execute the build plan
           command: |
@@ -41,10 +66,10 @@ jobs:
             stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
             stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
       - save_cache:
-          key: new-stack-home
+          key: stack-home-{{ checksum "stack.yaml" }}
           paths: "/home/circleci/.stack"
       - save_cache:
-          key: new-stack-work
+          key: stack-work-{{ checksum "stack.yaml" }}
           paths: ".stack-work"
       - save_cache:
           # This ensures that we push to the cache on every commit. If the
@@ -73,7 +98,7 @@ workflows:
   version: 2
   triggered-build:
     jobs:
-      - build
+      - triggered_build
 
   nightly:
     triggers:
@@ -84,4 +109,4 @@ workflows:
               only:
                 - master
     jobs:
-      - build
+      - scheduled_build
