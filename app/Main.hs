@@ -242,9 +242,12 @@ truncateHistory optHistoryLength _ optOutputDir = do
   putStrLn $ "Saving history file " ++ historyPath
   saveHistory historyPath newHistory
   forM_ (historyItems oldHistory) $ \item -> do
-    let path = optOutputDir </> T.unpack (unHistoryItem item)
-    putStrLn $ "Dropping old report " ++ path
-    removeFile path
+    let reportPath = optOutputDir </> T.unpack (unHistoryItem item)
+        buildUrlPath = optOutputDir </> historyItemToBuildUrl item
+    putStrLn $ "Dropping old report " ++ reportPath
+    removeFile reportPath
+    putStrLn $ "Dropping URL file " ++ buildUrlPath
+    removeFile buildUrlPath
     putStrLn $ "Dropping old per-build logs for that report"
     dropPerPackageLogs optOutputDir item
 
