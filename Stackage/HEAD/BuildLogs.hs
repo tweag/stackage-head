@@ -32,7 +32,7 @@ copyPerPackageLogs srcDir outputDir historyItem (BuildResults br) = do
   let f x = (dropPackageVersion x, PackageName x)
   m <- HM.fromList . fmap (f . T.pack) <$> listDirectory srcDir
   totalCopied <- newIORef 0
-  forM_ (HM.keys br) $ \opackage -> do
+  forM_ (HM.keys br) $ \opackage ->
     forM_ (HM.lookup opackage m) $ \ipackage -> do
       let ip = strPackageName ipackage
           tpath = locatePackageLogs outputDir historyItem opackage
