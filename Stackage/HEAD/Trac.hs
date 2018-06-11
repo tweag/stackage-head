@@ -29,6 +29,5 @@ generateTracTicket thisBuildUrl hitems buildDiff =
   "  * Execute `cabal new-build` or `cabal new-test` and see if you can reproduce the failure.\n\n" <>
   "The full CircleCI build log is available online here: " <> URI.render thisBuildUrl
   where
-    ghcCommit        = URI.render (ghcCommitUrl commit)
-    cabalConfig      = URI.render (cabalConfigUrl target)
-    (target, commit) = decomposeHistoryItem (snd hitems)
+    ghcCommit   = (URI.render . ghcCommitUrl   . snd) hitems
+    cabalConfig = (URI.render . cabalConfigUrl . snd) hitems

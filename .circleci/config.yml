@@ -48,7 +48,7 @@ jobs:
             curl https://raw.githubusercontent.com/fpco/stackage-nightly/master/$BUILD_PLAN.yaml --output $BUILD_PLAN.yaml
       - restore_cache:
           keys:
-            - new-build-reports-
+            - build-reports-0-
       - restore_cache:
           keys:
             - stack-home-{{ checksum "stack.yaml" }}
@@ -60,11 +60,15 @@ jobs:
       - run:
           name: Execute the build plan
           command: |
-            stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
-            stack setup
-            stack build
-            stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
-            stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
+            set -e
+            stack exec stackage-head -- already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --outdir $HOME/build-reports
+            if [ $? -eq 0 ] ; then
+              stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --bundle-file bundle-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
+              stack setup
+              stack build
+              stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
+              stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
+            fi
       - save_cache:
           key: stack-home-{{ checksum "stack.yaml" }}
           paths: "/home/circleci/.stack"
@@ -75,7 +79,7 @@ jobs:
           # This ensures that we push to the cache on every commit. If the
           # part with SHA1 is omitted, CircleCI may get too smart and skip
           # saving cache.
-          key: new-build-reports-{{ .BuildNum }}
+          key: build-reports-0-{{ .BuildNum }}
           paths:
             - /home/circleci/build-reports
       - run:

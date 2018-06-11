@@ -139,9 +139,9 @@ prettyPrintChange
 prettyPrintChange packageName (olderItem, olderStatus) (newerItem, newerStatus)
   = T.unlines
     [ unPackageName packageName <> ":"
-    , ind <> "at " <> unHistoryItem olderItem
+    , ind <> "at " <> hitemPretty olderItem
     , ind2 <> prettyPrintStatus olderStatus
-    , ind <> "at " <> unHistoryItem newerItem
+    , ind <> "at " <> hitemPretty newerItem
     , ind2 <> prettyPrintStatus newerStatus
     ]
   where

@@ -29,8 +29,8 @@ import Stackage.HEAD.Site.Resource
 import Stackage.HEAD.Site.Type
 import Stackage.HEAD.Trac
 import Text.URI (URI)
-import qualified Data.HashMap.Strict as HM
-import qualified Text.URI            as URI
+import qualified Data.Map.Strict as M
+import qualified Text.URI        as URI
 
 -- | Render the overview page.
 
@@ -43,9 +43,9 @@ overviewP items diffTable = withDefault "Overview" $ do
       th_ [scope_ "col"] "Diff"
     forM_ items $ \item -> do
       buildUrl <- reifyLocation (buildL item)
-      case HM.lookup item diffTable of
+      case M.lookup item diffTable of
         Nothing -> tr_ $ do
-          td_ $ a_ [href_ buildUrl] (toHtml $ hip item)
+          td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
           td_ "no info"
         Just (olderItem, (innocent, suspicious)) -> do
           let hasSuspicious = not (isEmptyDiff suspicious)
@@ -60,7 +60,7 @@ overviewP items diffTable = withDefault "Overview" $ do
                 | otherwise     = "no changes"
           diffUrl <- reifyLocation (diffL olderItem item)
           tr_ classes $ do
-            td_ $ a_ [href_ buildUrl] (toHtml $ hip item)
+            td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
             td_ $ a_ [href_ diffUrl]  diffText
   p_ [class_ "text-muted"] $ do
     toHtml $
@@ -81,15 +81,14 @@ buildP :: BuildPageArgs -> HtmlT IO ()
 buildP BuildPageArgs {..} = withDefault "Build results" $ do
   buildUrl   <- reifyLocation (buildL bpaItem)
   breadcrumb [ ("Overview", overviewUrl)
-             , ("Build " <> hip bpaItem, buildUrl)
+             , ("Build " <> hitemPretty bpaItem, buildUrl)
              ]
-  let (stackagePlan, ghcCommit) = decomposeHistoryItem bpaItem
-      cabalConfigUrl' = URI.render (cabalConfigUrl stackagePlan)
-      ghcCommitUrl'   = URI.render (ghcCommitUrl ghcCommit)
+  let cabalConfigUrl' = URI.render (cabalConfigUrl bpaItem)
+      ghcCommitUrl'   = URI.render (ghcCommitUrl bpaItem)
   btnLink cabalConfigUrl' "Cabal config"
   btnLink ghcCommitUrl' "GHC commit"
   btnLink (URI.render bpaBuildUrl) "CircleCI build"
-  forM_ (HM.lookup bpaItem bpaDiffTable) $ \(olderItem, _) -> do
+  forM_ (M.lookup bpaItem bpaDiffTable) $ \(olderItem, _) -> do
     diffUrl <- reifyLocation (diffL olderItem bpaItem)
     btnLink diffUrl "Diff with prev build"
   table_ [class_ "table table-sm"] $ do
@@ -143,7 +142,7 @@ diffP DiffPageArgs {..} = withDefault "Diff" $ do
   olderBuildUrl <- reifyLocation (buildL dpaOlderItem)
   newerBuildUrl <- reifyLocation (buildL dpaNewerItem)
   breadcrumb [ ("Overview", overviewUrl)
-             , ("Diff " <> hip dpaNewerItem, diffUrl)
+             , ("Diff " <> hitemPretty dpaNewerItem, diffUrl)
              ]
   let tracTicket = generateTracTicket
         dpaBuildUrl
@@ -196,12 +195,12 @@ renderPackageDiff (oitem, ourl) (nitem, nurl) (packageName, (ostate, nstate)) =
       ul_ $ do
         li_ $ do
           "at "
-          a_ [href_ ourl] (toHtml $ hip oitem)
+          a_ [href_ ourl] (toHtml $ hitemPretty oitem)
           " (older)"
           ul_ $ li_ (renderPackageState ostate)
         li_ $ do
           "at "
-          a_ [href_ nurl] (toHtml $ hip nitem)
+          a_ [href_ nurl] (toHtml $ hitemPretty nitem)
           " (newer)"
           ul_ $ li_ (renderPackageState nstate)
 
@@ -239,7 +238,7 @@ packageP PackagePageArgs {..} = withDefault "Package" $ do
   buildUrl <- reifyLocation (buildL ppaItem)
   packageUrl <- reifyLocation (packageL ppaItem ppaPackageName)
   breadcrumb [ ("Overview", overviewUrl)
-             , ("Build " <> hip ppaItem, buildUrl)
+             , ("Build " <> hitemPretty ppaItem, buildUrl)
              , (unPackageName ppaPackageName, packageUrl)
              ]
   case ppaBuildStatus of

@@ -25,13 +25,13 @@ overviewUrl :: Text
 overviewUrl = URI.render (locationUri overviewL)
 
 buildL :: MonadThrow m => HistoryItem -> m Location
-buildL hi = mkLocation ("build" :| [hip hi <> ".html"])
+buildL hi = mkLocation ("build" :| [hitemPretty hi <> ".html"])
 
 diffL :: MonadThrow m => HistoryItem -> HistoryItem -> m Location
 diffL hi0 hi1 = mkLocation ("diff" :| [x])
   where
-    x = hip hi0 <> "-vs-" <> hip hi1 <> ".html"
+    x = hitemPretty hi0 <> "-vs-" <> hitemPretty hi1 <> ".html"
 
 packageL :: MonadThrow m => HistoryItem -> PackageName -> m Location
 packageL hi (PackageName n) = mkLocation
-  ("build" :| [hip hi, n, "overview.html"])
+  ("build" :| [hitemPretty hi, n, "overview.html"])

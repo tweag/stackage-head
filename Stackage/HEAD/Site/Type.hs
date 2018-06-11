@@ -15,10 +15,10 @@ where
 import Control.Monad
 import Control.Monad.Catch
 import Data.Data (Data)
-import Data.HashMap.Strict (HashMap)
 import Data.HashSet (HashSet)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Map.Strict (Map)
 import Data.Maybe (fromJust)
 import Data.Semigroup
 import Data.Text (Text)
@@ -47,7 +47,7 @@ data SiteParams = SiteParams
 -- actual diff partitioned by innocence: first innocent diff and suspicious
 -- diff.
 
-type DiffTable = HashMap HistoryItem (HistoryItem, (BuildDiff, BuildDiff))
+type DiffTable = Map HistoryItem (HistoryItem, (BuildDiff, BuildDiff))
 
 -- | Location of a page or resource on the site.
 
