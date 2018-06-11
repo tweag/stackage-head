@@ -69,6 +69,8 @@ jobs:
               stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
               stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
             fi
+      - store_artifacts:
+          - path: /home/circleci/build-reports/latest.csv
       - save_cache:
           key: stack-home-{{ checksum "stack.yaml" }}
           paths: "/home/circleci/.stack"
