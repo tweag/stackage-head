@@ -143,9 +143,9 @@ addReport buildUrl metadataPath optBuildLog optPerPackageLogs target outputDir =
   item <- mkHistoryItem target biSha1 buildUrl
   let rpath = outputDir </> reportPath item
       hpath = historyPath outputDir
+      lpath = latestBuildPath outputDir
   putStrLn $ "Loading history file " ++ fromAbsFile hpath
   history <- loadHistory hpath >>= removeEither
-
   when (Just item == newestHistoryItem history) $ do
     putStrLn $ "Report " ++ fromAbsFile rpath
       ++ " is already present in history, so do nothing."
@@ -155,8 +155,10 @@ addReport buildUrl metadataPath optBuildLog optPerPackageLogs target outputDir =
   buildResults <- removeEither $ first
     (M.parseErrorPretty' rawText)
     (parseBuildLog optBuildLog rawText)
-  putStrLn $ "Saving report to " ++ fromAbsFile rpath
-  BL.writeFile (fromAbsFile rpath) (encodeBuildResults buildResults)
+  let buildResultsBs = encodeBuildResults buildResults
+  forM_ [rpath, lpath] $ \p -> do
+    putStrLn $ "Saving report to " ++ fromAbsFile p
+    BL.writeFile (fromAbsFile p) buildResultsBs
   forM_ optPerPackageLogs $ \srcDirRaw -> do
     putStrLn "Copying per-package build logs"
     srcDir <- resolveDir' srcDirRaw
@@ -298,6 +300,9 @@ alreadySeen optMetadata target outputDir = do
 
 historyPath :: Path Abs Dir -> Path Abs File
 historyPath outputDir = outputDir </> $(mkRelFile "history.csv")
+
+latestBuildPath :: Path Abs Dir -> Path Abs File
+latestBuildPath outputDir = outputDir </> $(mkRelFile "latest.csv")
 
 uriParser :: ReadM URI
 uriParser = eitherReader $ \s ->
