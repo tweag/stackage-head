@@ -67,7 +67,16 @@ data HistoryItem = HistoryItem
   { historyItemTarget :: !Text -- ^ Target name
   , historyItemSha1 :: !Text -- ^ GHC commit SHA1
   , historyItemBuildUrl :: !URI -- ^ Link to the build
-  } deriving (Eq, Ord, Generic)
+  } deriving (Generic)
+
+instance Eq HistoryItem where
+  HistoryItem t0 c0 _ == HistoryItem t1 c1 _ = t0 == t1 && c0 == c1
+
+instance Ord HistoryItem where
+  HistoryItem t0 c0 _ `compare` HistoryItem t1 c1 _ =
+    case t0 `compare` t1 of
+      EQ -> c0 `compare` c1
+      r  -> r
 
 instance Csv.FromRecord HistoryItem where
   parseRecord v = do
