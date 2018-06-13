@@ -31,8 +31,9 @@ copyPerPackageLogs
   -> IO Int            -- ^ Number of copied files
 copyPerPackageLogs srcDir outputDir historyItem (BuildResults br) = do
   let f x = (dropPackageVersion x, PackageName x)
-  m <- HM.fromList . fmap (f . T.pack . fromRelFile . filename) . snd
-    <$> listDir srcDir
+  m <- HM.fromList
+    . fmap (f . T.dropWhileEnd (== '/') . T.pack . fromRelDir . dirname)
+    . fst <$> listDir srcDir
   totalCopied <- newIORef 0
   forM_ (HM.keys br) $ \opackage ->
     forM_ (HM.lookup opackage m) $ \ipackage -> do
