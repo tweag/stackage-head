@@ -21,6 +21,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.List (sortBy)
 import Data.Ord (comparing)
 import Stackage.HEAD.Package
+import Test.QuickCheck
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
 import qualified Data.HashMap.Strict  as HM
@@ -49,6 +50,15 @@ data BuildStatus
     --     * the number of passing test suites
     --     * the number of failing test suites
   deriving (Show, Eq, Ord)
+
+instance Arbitrary BuildStatus where
+  arbitrary = oneof
+    [ BuildFailure . getNonNegative <$> arbitrary
+    , pure BuildUnreachable
+    , BuildSuccess
+      <$> (getNonNegative <$> arbitrary)
+      <*> (getNonNegative <$> arbitrary)
+    ]
 
 -- | Extract components of 'BuildResults'.
 

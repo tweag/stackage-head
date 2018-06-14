@@ -28,7 +28,7 @@ newtype BuildDiff = BuildDiff
   { unBuildDiff :: HashMap PackageName
       ( Maybe BuildStatus
       , Maybe BuildStatus )
-  }
+  } deriving (Show)
 
 -- | Construct a value of the 'BuildDiff' type.
 
@@ -37,12 +37,15 @@ diffBuildResults
   -> BuildResults      -- ^ Newer state
   -> BuildDiff
 diffBuildResults (BuildResults old) (BuildResults new) =
-  BuildDiff . HM.filter isChanged $ HM.unionWith
+  BuildDiff . HM.filter (uncurry isChanged) $ HM.unionWith
     combine
     (HM.map liftOld old)
     (HM.map liftNew new)
   where
-    isChanged = uncurry (/=)
+    -- NOTE When just the number of the packages that a failing package
+    -- blocks changes, we do not consider it a change.
+    isChanged (Just (BuildFailure _)) (Just (BuildFailure _)) = False
+    isChanged x y = x /= y
     combine (x, _) (_, y) = (x, y)
     liftOld x = (Just x, Nothing)
     liftNew x = (Nothing, Just x)
