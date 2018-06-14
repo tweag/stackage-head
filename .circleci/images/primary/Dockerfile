@@ -1,6 +1,6 @@
 FROM snoyberg/stackage:nightly
 
-ENV PATH /usr/local/cuda-8.0/bin:/home/circleci/bin:/home/circleci/ghc-head/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH /usr/local/cuda-8.0/bin:/home/circleci/bin:/home/circleci/.local/bin:/home/circleci/ghc-head/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN apt-get install -qy s3cmd
 
@@ -16,15 +16,16 @@ ENV HOME /home/circleci
 # Create $HOME/bin
 RUN mkdir -p $HOME/bin
 
-# Get Stackage curator
-RUN cd $HOME/bin && curl https://s3.amazonaws.com/stackage-travis/stackage-curator/stackage-curator.bz2 --output stackage-curator.bz2
-RUN cd $HOME/bin && bunzip2 stackage-curator.bz2
-RUN cd $HOME/bin && chmod +x stackage-curator
-
 # Get stack
 RUN cd $HOME/bin && curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C $HOME/bin '*/stack'
 
 # Update package indices
 RUN stack update
+
+# Build stackage curator
+WORKDIR $HOME
+RUN git clone https://github.com/fpco/stackage-curator.git
+RUN cd $HOME/stackage-curator && git checkout 7635cdc45fcc7c1b733957bce865c40ae8e22b0c
+RUN cd $HOME/stackage-curator && stack build --copy-bins
 
 CMD ["bash"]
