@@ -170,37 +170,36 @@ diffP DiffPageArgs {..} = withDefault "Diff" $ do
       "Copy Trac ticket"
     h3_ "Suspicious changes"
     forM_ (buildDiffItems dpaSuspiciousDiff) $
-      renderPackageDiff (dpaOlderItem, olderBuildUrl)
-                        (dpaNewerItem, newerBuildUrl)
+      renderPackageDiff dpaOlderItem dpaNewerItem
   unless (isEmptyDiff dpaInnocentDiff) $ do
     h3_ "Innocent changes"
     forM_ (buildDiffItems dpaInnocentDiff) $
-      renderPackageDiff (dpaOlderItem, olderBuildUrl)
-                        (dpaNewerItem, newerBuildUrl)
+      renderPackageDiff dpaOlderItem dpaNewerItem
 
 -- | Render diff for a single package.
 
 renderPackageDiff
-  :: (HistoryItem, Text) -- ^ Older history item and its url
-  -> (HistoryItem, Text) -- ^ Newer history item and its url
-  -> (PackageName, ( Maybe BuildStatus
-                   , Maybe BuildStatus ))
+  :: HistoryItem -- ^ Older history item
+  -> HistoryItem -- ^ Newer history item
+  -> (PackageName, (Maybe BuildStatus, Maybe BuildStatus))
+     -- ^ Package name and change of its status
   -> HtmlT IO ()
-renderPackageDiff (oitem, ourl) (nitem, nurl) (packageName, (ostate, nstate)) =
+renderPackageDiff oitem nitem (packageName, (ostate, nstate)) = do
+  olderPackageUrl <- reifyLocation (packageL oitem packageName)
+  newerPackageUrl <- reifyLocation (packageL nitem packageName)
   div_ [class_ "card my-3"] $
     div_ [class_ "card-body"] $ do
-      h5_ [class_ "card-title"] $ do
-        packageUrl <- reifyLocation (packageL nitem packageName)
-        a_ [href_ packageUrl] (toHtml (unPackageName packageName))
+      h5_ [class_ "card-title"] $
+        a_ [href_ newerPackageUrl] (toHtml (unPackageName packageName))
       ul_ $ do
         li_ $ do
           "at "
-          a_ [href_ ourl] (toHtml $ hitemPretty oitem)
+          a_ [href_ olderPackageUrl] (toHtml $ hitemPretty oitem)
           " (older)"
           ul_ $ li_ (renderPackageState ostate)
         li_ $ do
           "at "
-          a_ [href_ nurl] (toHtml $ hitemPretty nitem)
+          a_ [href_ newerPackageUrl] (toHtml $ hitemPretty nitem)
           " (newer)"
           ul_ $ li_ (renderPackageState nstate)
 
