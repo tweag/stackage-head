@@ -73,7 +73,9 @@ jobs:
               stack exec stackage-head -- truncate --history-length 16 --outdir $HOME/build-reports
             fi
       - store_artifacts:
-          path: /home/circleci/build-reports/latest.csv
+          path: "build.log"
+      - store_artifacts:
+          path: "/home/circleci/build-reports/latest.csv"
       - save_cache:
           key: stack-home-{{ checksum "stack.yaml" }}
           paths: "/home/circleci/.stack"
