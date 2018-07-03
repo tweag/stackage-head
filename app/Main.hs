@@ -248,7 +248,7 @@ truncateHistory optHistoryLength outputDir = do
   forM_ (historyItems oldHistory) $ \item -> do
     let rpath = outputDir </> reportPath item
     putStrLn $ "Dropping old report " ++ fromAbsFile rpath
-    removeFile rpath
+    ignoringAbsence (removeFile rpath)
     putStrLn "Dropping old per-build logs for that report"
     dropPerPackageLogs outputDir item
 
