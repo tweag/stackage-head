@@ -43,8 +43,8 @@ bootstrap4Stylesheet = Resource
 
 fontawesomeStylesheet :: Resource 'Stylesheet
 fontawesomeStylesheet = Resource
-  { resourceHref = "https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css"
-  , resourceIntegrity = "sha384-dNpIIXE8U05kAbPhy3G1cz+yZmTzA6CY8Vg/u2L9xRnHjJiAK76m2BIEaSEV+/aU"
+  { resourceHref = "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+  , resourceIntegrity = "sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
   }
 
 jqueryScript :: Resource 'Script
