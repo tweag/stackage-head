@@ -16,6 +16,7 @@ where
 
 import Control.Monad
 import Control.Monad.Trans
+import Data.HashSet (HashSet)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Lucid
@@ -29,6 +30,7 @@ import Stackage.HEAD.Site.Resource
 import Stackage.HEAD.Site.Type
 import Stackage.HEAD.Trac
 import Text.URI (URI)
+import qualified Data.HashSet    as HS
 import qualified Data.Map.Strict as M
 import qualified Text.URI        as URI
 
@@ -69,10 +71,11 @@ overviewP items diffTable = withDefault "Overview" $ do
     a_ [href_ githubRepoUrl] (toHtml githubRepoUrl)
 
 data BuildPageArgs = BuildPageArgs
-  { bpaItem :: HistoryItem
-  , bpaBuildResults :: BuildResults
-  , bpaDiffTable :: DiffTable
-  , bpaBuildUrl :: URI
+  { bpaItem :: !HistoryItem
+  , bpaBuildResults :: !BuildResults
+  , bpaDiffTable :: !DiffTable
+  , bpaBuildUrl :: !URI
+  , bpaFlakyPkgs :: !(HashSet PackageName)
   }
 
 -- | Render results of a build.
@@ -121,15 +124,18 @@ buildP BuildPageArgs {..} = withDefault "Build results" $ do
                 )
       tr_ classes $ do
         td_ $ a_ [href_ packageUrl] (toHtml $ unPackageName packageName)
-        td_ buildSummary
+        td_ $ do
+          buildSummary
+          when (HS.member packageName bpaFlakyPkgs) " [flaky]"
         td_ testSummary
 
 data DiffPageArgs = DiffPageArgs
-  { dpaOlderItem :: HistoryItem
-  , dpaNewerItem :: HistoryItem
-  , dpaInnocentDiff :: BuildDiff
-  , dpaSuspiciousDiff :: BuildDiff
-  , dpaBuildUrl  :: URI
+  { dpaOlderItem :: !HistoryItem
+  , dpaNewerItem :: !HistoryItem
+  , dpaInnocentDiff :: !BuildDiff
+  , dpaSuspiciousDiff :: !BuildDiff
+  , dpaBuildUrl  :: !URI
+  , dpaFlakyPkgs :: !(HashSet PackageName)
   }
 
 -- | Render a diff between two builds.
@@ -170,27 +176,30 @@ diffP DiffPageArgs {..} = withDefault "Diff" $ do
       "Copy Trac ticket"
     h3_ "Suspicious changes"
     forM_ (buildDiffItems dpaSuspiciousDiff) $
-      renderPackageDiff dpaOlderItem dpaNewerItem
+      renderPackageDiff dpaFlakyPkgs dpaOlderItem dpaNewerItem
   unless (isEmptyDiff dpaInnocentDiff) $ do
     h3_ "Innocent changes"
     forM_ (buildDiffItems dpaInnocentDiff) $
-      renderPackageDiff dpaOlderItem dpaNewerItem
+      renderPackageDiff dpaFlakyPkgs dpaOlderItem dpaNewerItem
 
 -- | Render diff for a single package.
 
 renderPackageDiff
-  :: HistoryItem -- ^ Older history item
+  :: HashSet PackageName
+     -- ^ Set of flaky packages
+  -> HistoryItem -- ^ Older history item
   -> HistoryItem -- ^ Newer history item
   -> (PackageName, (Maybe BuildStatus, Maybe BuildStatus))
      -- ^ Package name and change of its status
   -> HtmlT IO ()
-renderPackageDiff oitem nitem (packageName, (ostate, nstate)) = do
+renderPackageDiff flakyPkgs oitem nitem (packageName, (ostate, nstate)) = do
   olderPackageUrl <- reifyLocation (packageL oitem packageName)
   newerPackageUrl <- reifyLocation (packageL nitem packageName)
   div_ [class_ "card my-3"] $
     div_ [class_ "card-body"] $ do
       h5_ [class_ "card-title"] $
         a_ [href_ newerPackageUrl] (toHtml (unPackageName packageName))
+      flakinessHeadsup (HS.member packageName flakyPkgs)
       ul_ $ do
         li_ $ do
           "at "
@@ -221,11 +230,12 @@ renderPackageState mstatus =
                    show b <> " test suites failed"
 
 data PackagePageArgs = PackagePageArgs
-  { ppaItem :: HistoryItem
-  , ppaPackageName :: PackageName
-  , ppaBuildStatus :: BuildStatus
-  , ppaBuildLog :: Maybe Text
-  , ppaTestLog :: Maybe Text
+  { ppaItem :: !HistoryItem
+  , ppaPackageName :: !PackageName
+  , ppaBuildStatus :: !BuildStatus
+  , ppaBuildLog :: !(Maybe Text)
+  , ppaTestLog :: !(Maybe Text)
+  , ppaFlaky :: !Bool
   }
 
 -- | Render information about a package in a build.
@@ -240,6 +250,7 @@ packageP PackagePageArgs {..} = withDefault "Package" $ do
              , ("Build " <> hitemPretty ppaItem, buildUrl)
              , (unPackageName ppaPackageName, packageUrl)
              ]
+  flakinessHeadsup ppaFlaky
   case ppaBuildStatus of
     BuildFailure n ->
       p_ . toHtml $ "The build failed. It prevents " <>
@@ -306,6 +317,10 @@ breadcrumb xs' =
               a_ [href_ url] (toHtml name)
       forM_ xs (renderOne False)
       renderOne True x
+
+flakinessHeadsup :: Bool -> HtmlT IO ()
+flakinessHeadsup b = when b . p_ . em_ $
+  "Heads-up, this package is marked as “flaky” in the configuration, so all changes are considered innocent."
 
 btnLink :: Monad m
   => Text              -- ^ URL

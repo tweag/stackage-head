@@ -20,6 +20,7 @@ import Stackage.HEAD.Site.Type
 import Stackage.HEAD.Utils
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict  as HM
+import qualified Data.HashSet         as HS
 import qualified Data.Map.Strict      as M
 import qualified Data.Text.Lazy.IO    as TL
 
@@ -58,6 +59,7 @@ generateSite SiteParams {..} = do
         , ppaBuildStatus = status
         , ppaBuildLog = buildLog
         , ppaTestLog = testLog
+        , ppaFlaky = HS.member packageName spFlakyPkgs
         }
     bl <- buildL item
     let buildUrl = hitemBuildUrl item
@@ -66,6 +68,7 @@ generateSite SiteParams {..} = do
       , bpaBuildResults = br
       , bpaDiffTable = diffTable
       , bpaBuildUrl = buildUrl
+      , bpaFlakyPkgs = spFlakyPkgs
       }
     forM_ (M.lookup item diffTable) $ \r@(oitem, (idiff, sdiff)) -> do
       dl <- diffL (fst r) item
@@ -75,4 +78,5 @@ generateSite SiteParams {..} = do
         , dpaInnocentDiff = idiff
         , dpaSuspiciousDiff = sdiff
         , dpaBuildUrl = buildUrl
+        , dpaFlakyPkgs = spFlakyPkgs
         }
