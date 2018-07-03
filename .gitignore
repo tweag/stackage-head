@@ -25,3 +25,5 @@ cabal.project.local
 cabal.sandbox.config
 dist-*/
 dist/
+test-build-reports/
+test-site/

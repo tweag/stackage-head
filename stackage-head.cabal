@@ -14,6 +14,10 @@ build-type:           Simple
 description:          Analysis and management of results of Stackage builds.
 extra-doc-files:      CHANGELOG.md
                     , README.md
+data-files:           data/*.txt
+                    , data/*.csv
+                    , data/*.json
+                    , data/per-package-logs/ALUT-0.1.0.0/*.out
 
 source-repository head
   type:               git
