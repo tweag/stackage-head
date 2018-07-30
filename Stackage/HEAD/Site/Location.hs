@@ -11,7 +11,6 @@ where
 
 import Control.Monad.Catch
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Monoid
 import Data.Text (Text)
 import Stackage.HEAD.History
 import Stackage.HEAD.Package

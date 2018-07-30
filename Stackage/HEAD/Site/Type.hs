@@ -20,7 +20,6 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict (Map)
 import Data.Maybe (fromJust)
-import Data.Semigroup
 import Data.Text (Text)
 import Data.Typeable (Typeable, cast)
 import Language.Haskell.TH hiding (location)
