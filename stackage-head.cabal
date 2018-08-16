@@ -99,7 +99,7 @@ test-suite tests
 
 executable stackage-head
   main-is:            Main.hs
-  hs-source-dirs:     app
+  hs-source-dirs:     app/stackage-head
   build-depends:      aeson            >= 1.2  && < 1.4
                     , base             >= 4.10 && < 5.0
                     , bytestring       >= 0.10 && < 0.11
@@ -115,6 +115,26 @@ executable stackage-head
                     , unordered-containers >= 0.2.8 && < 0.3
   if flag(dev)
     ghc-options:      -Wall -Werror
+  else
+    ghc-options:      -O2 -Wall
+  default-language:   Haskell2010
+
+executable fix-build-plan
+  main-is:            Main.hs
+  hs-source-dirs:     app/fix-build-plan
+  build-depends:      base             >= 4.7 && < 5.0
+                    , Cabal
+                    , containers       >= 0.5 && < 0.6
+                    , optparse-applicative >= 0.14 && < 1.15
+                    , stackage-curator >= 0.16
+                    , text             >= 0.2 && < 1.3
+                    , yaml             >= 0.8 && < 0.9
+  if flag(dev)
+    ghc-options:      -Wall -Werror -Wcompat
+                      -Wincomplete-record-updates
+                      -Wincomplete-uni-patterns
+                      -Wnoncanonical-monad-instances
+                      -Wnoncanonical-monadfail-instances
   else
     ghc-options:      -O2 -Wall
   default-language:   Haskell2010

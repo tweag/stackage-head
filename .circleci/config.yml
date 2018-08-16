@@ -59,11 +59,18 @@ jobs:
             - stack-work-{{ checksum "stack.yaml" }}
             - stack-work-
       - run:
-          name: Execute the build plan
+          name: Build stack programs
           command: |
             set -e
             stack setup
             stack build
+      - run:
+          name: Patching build plan to use custom URLs
+          command: |
+            stack exec fix-build-plan -- $BUILD_PLAN.yaml custom-source-urls.yaml
+      - run:
+          name: Execute the build plan
+          command: |
             set +e
             stack exec stackage-head -- already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --outdir $HOME/build-reports
             already_seen=$?
