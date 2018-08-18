@@ -26,17 +26,20 @@ as the following progression of steps:
    most cases, and even if a couple of packages cannot be built it's not a
    big deal and can be detected as usual (see below).
 
-5. Execute the chosen build plan and save build log.
+5. Update, if necessary, the downloaded plan setting source URLs in case we
+   need to use not-yet-released versions of some packages.
 
-6. Parse the build log and turn it into a build report, store it for next
+6. Execute the chosen build plan and save build log.
+
+7. Parse the build log and turn it into a build report, store it for next
    runs.
 
-7. Compare two most recent build reports and detect regressions. Fail if
+8. Compare two most recent build reports and detect regressions. Fail if
    there are suspicious changes (which are necessarily due to some changes
    in GHC, because we build always with the same build plan, only changing
    GHC commits).
 
-8. GHC team is notified if the build fails.
+9. GHC team is notified if the build fails.
 
 ## Blog posts and talks
 

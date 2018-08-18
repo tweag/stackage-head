@@ -31,6 +31,11 @@ optionsParser = Options
   <$> argument str (metavar "BUILD-PLAN")
   <*> argument str (metavar "SOURCE-URL-FILE")
 
+-- | Load a build plan from a YAML file and set source urls for certain
+-- packages according to the data from another YAML file. The second file
+-- should contain just a top-level dictionary from package names to their
+-- respective URLs.
+
 main :: IO ()
 main = do
   Options {..} <- execParser optionsParserInfo
@@ -38,7 +43,13 @@ main = do
   buildPlan <- Yaml.decodeFileThrow optBuildPlanPath
   Yaml.encodeFile optBuildPlanPath (setSourceUrls buildPlan sourceUrls)
 
-setSourceUrls :: BuildPlan -> Map String Text -> BuildPlan
+-- | Update a 'BuildPlan' setting source urls according to the second
+-- element.
+
+setSourceUrls
+  :: BuildPlan         -- ^ Build plan to update
+  -> Map String Text   -- ^ Map from package names to URLs
+  -> BuildPlan         -- ^ Updated build plan
 setSourceUrls buildPlan sourceUrls = buildPlan
   { bpPackages = M.mapWithKey f (bpPackages buildPlan)
   }
