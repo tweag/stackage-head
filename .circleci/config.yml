@@ -26,9 +26,9 @@ jobs:
   scheduled_build:
     resource_class: xlarge
     docker:
-      - image: mrkkrp/stackage-head:0.3.0
+      - image: mrkkrp/stackage-head:0.3.1
     environment:
-      BUILD_PLAN: nightly-2018-07-30
+      BUILD_PLAN: nightly-2018-09-26
       JOBS: 9
       FLAKY_PKGS: "" # "--flaky threads --flaky lifted-async --flaky fsnotify-conduit --flaky hspec-core --flaky stm-delay"
       HISTORY_LENGTH: 16

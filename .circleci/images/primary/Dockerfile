@@ -25,7 +25,7 @@ RUN stack update
 # Build stackage curator
 WORKDIR $HOME
 RUN git clone https://github.com/fpco/stackage-curator.git
-RUN cd $HOME/stackage-curator && git checkout 7635cdc45fcc7c1b733957bce865c40ae8e22b0c
+RUN cd $HOME/stackage-curator && git checkout 09112195345ec6054d324616b95936fbc4d23a87
 RUN cd $HOME/stackage-curator && stack build --copy-bins
 
 CMD ["bash"]
