@@ -3,7 +3,7 @@ packages:
 - '.'
 - location:
     git: git@github.com:fpco/stackage-curator.git
-    commit: 8b675ed303f3ed289589496ee2de2592866ff637
+    commit: eaeba273bdd38f121ad200b2a876227e666f86a2
   extra-dep: true
 
 nix:
