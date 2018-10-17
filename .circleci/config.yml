@@ -84,6 +84,12 @@ jobs:
           path: "build.log"
       - store_artifacts:
           path: "/home/circleci/build-reports/latest.csv"
+      - run:
+          name: Package build-reports
+          command: |
+            tar -C "$HOME" -cJf build-reports.tar.xz build-reports
+      - store_artifacts:
+          path: "/home/circleci/build-reports.tar.xz"
       - save_cache:
           key: stack-home-{{ checksum "stack.yaml" }}
           paths: "/home/circleci/.stack"
