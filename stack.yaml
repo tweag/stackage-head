@@ -1,3 +1,11 @@
 resolver: lts-12.4
 packages:
 - '.'
+- location:
+    git: git@github.com:fpco/stackage-curator.git
+    commit: eaeba273bdd38f121ad200b2a876227e666f86a2
+  extra-dep: true
+
+nix:
+  packages:
+    - zlib
