@@ -128,7 +128,7 @@ workflows:
   version: 2
   triggered-build:
     jobs:
-      - triggered_build
+      - scheduled_build
 
   nightly:
     triggers:
