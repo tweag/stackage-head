@@ -19,6 +19,7 @@ import Control.Monad.Trans
 import Data.HashSet (HashSet)
 import Data.Monoid ((<>))
 import Data.Text (Text)
+import Data.Time (formatTime, defaultTimeLocale)
 import Lucid
 import Lucid.Base (makeAttribute)
 import Stackage.HEAD.BuildDiff
@@ -42,12 +43,16 @@ overviewP items diffTable = withDefault "Overview" $ do
   table_ [class_ "table table-sm"] $ do
     thead_ . tr_ $ do
       th_ [scope_ "col"] "Build (newer first)"
+      th_ [scope_ "col"] "Date/time of build"
       th_ [scope_ "col"] "Diff"
     forM_ items $ \item -> do
+      let itemDate = toHtml $
+            formatTime defaultTimeLocale "%Y-%m-%d %H:%M UTC" $ hitemUtcTime item
       buildUrl <- reifyLocation (buildL item)
       case M.lookup item diffTable of
         Nothing -> tr_ $ do
           td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
+          td_ itemDate
           td_ "no info"
         Just (olderItem, (innocent, suspicious)) -> do
           let hasSuspicious = not (isEmptyDiff suspicious)
@@ -63,6 +68,7 @@ overviewP items diffTable = withDefault "Overview" $ do
           diffUrl <- reifyLocation (diffL olderItem item)
           tr_ classes $ do
             td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
+            td_ itemDate
             td_ $ a_ [href_ diffUrl]  diffText
   p_ [class_ "text-muted"] $ do
     toHtml $

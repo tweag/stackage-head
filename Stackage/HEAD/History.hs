@@ -16,6 +16,7 @@ module Stackage.HEAD.History
   , hitemTarget
   , hitemCommit
   , hitemBuildUrl
+  , hitemUtcTime
   , cabalConfigUrl
   , ghcCommitUrl
   -- * Build history
@@ -39,9 +40,11 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Vector (Vector)
+import Data.Time (UTCTime)
 import GHC.Generics
 import Path
 import Path.IO (forgivingAbsence)
+import Text.Read (readMaybe)
 import Text.URI (URI)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Csv             as Csv
@@ -67,13 +70,14 @@ data HistoryItem = HistoryItem
   { historyItemTarget :: !Text -- ^ Target name
   , historyItemSha1 :: !Text -- ^ GHC commit SHA1
   , historyItemBuildUrl :: !URI -- ^ Link to the build
+  , historyItemUtcTime :: !UTCTime
   } deriving (Generic)
 
 instance Eq HistoryItem where
-  HistoryItem t0 c0 _ == HistoryItem t1 c1 _ = t0 == t1 && c0 == c1
+  HistoryItem t0 c0 _ _ == HistoryItem t1 c1 _ _ = t0 == t1 && c0 == c1
 
 instance Ord HistoryItem where
-  HistoryItem t0 c0 _ `compare` HistoryItem t1 c1 _ =
+  HistoryItem t0 c0 _ _ `compare` HistoryItem t1 c1 _ _ =
     case t0 `compare` t1 of
       EQ -> c0 `compare` c1
       r  -> r
@@ -84,13 +88,15 @@ instance Csv.FromRecord HistoryItem where
     target   <- v Csv..! 0
     commit   <- v Csv..! 1
     buildUrl <- (v Csv..! 2) >>= fromMonadThrow . URI.mkURI
-    fromMonadThrow (mkHistoryItem target commit buildUrl)
+    utcTime <- (v Csv..! 3) >>= maybe (fail "Cannot parse UTCTime") return . readMaybe
+    fromMonadThrow (mkHistoryItem target commit buildUrl utcTime)
 
 instance Csv.ToRecord HistoryItem where
   toRecord HistoryItem {..} = Csv.record
     [ Csv.toField historyItemTarget
     , Csv.toField historyItemSha1
     , Csv.toField (URI.render historyItemBuildUrl)
+    , Csv.toField (show historyItemUtcTime)
     ]
 
 -- | Exception that is thrown when 'HistoryItem' cannot be constructed.
@@ -112,10 +118,11 @@ mkHistoryItem :: MonadThrow m
   => Text              -- ^ Target name
   -> Text              -- ^ Commit SHA1
   -> URI               -- ^ Link to the build
+  -> UTCTime           -- ^ Time of the build
   -> m HistoryItem
-mkHistoryItem target sha1 buildUrl =
+mkHistoryItem target sha1 buildUrl utcTime =
   maybe (throwM $ InvalidHistoryItem target sha1 buildUrl) return $ do
-    let item = HistoryItem target sha1 buildUrl
+    let item = HistoryItem target sha1 buildUrl utcTime
     -- Assert that reportPath is obtainable
     void (reportPathMaybe item)
     -- Assert that logPath is obtainable
@@ -129,7 +136,7 @@ mkHistoryItem target sha1 buildUrl =
 -- | Get textual representation of a 'HistoryItem'.
 
 hitemPretty :: HistoryItem -> Text
-hitemPretty (HistoryItem target sha1 _) = target <> "-" <> sha1
+hitemPretty (HistoryItem target sha1 _ _) = target <> "-" <> sha1
 
 -- | Convert 'HistoryItem' to a 'String'.
 
@@ -173,6 +180,10 @@ hitemCommit = historyItemSha1
 
 hitemBuildUrl :: HistoryItem -> URI
 hitemBuildUrl = historyItemBuildUrl
+
+-- | Item's build date/time.
+hitemUtcTime :: HistoryItem -> UTCTime
+hitemUtcTime = historyItemUtcTime
 
 ----------------------------------------------------------------------------
 -- Build history

@@ -49,7 +49,7 @@ jobs:
             curl https://raw.githubusercontent.com/fpco/stackage-nightly/master/$BUILD_PLAN.yaml --output $BUILD_PLAN.yaml
       - restore_cache:
           keys:
-            - build-reports-0-
+            - build-reports-2-
       - restore_cache:
           keys:
             - stack-home-{{ checksum "stack.yaml" }}
@@ -94,7 +94,7 @@ jobs:
           # This ensures that we push to the cache on every commit. If the
           # part with SHA1 is omitted, CircleCI may get too smart and skip
           # saving cache.
-          key: build-reports-0-{{ .BuildNum }}
+          key: build-reports-2-{{ .BuildNum }}
           paths:
             - /home/circleci/build-reports
       - run:

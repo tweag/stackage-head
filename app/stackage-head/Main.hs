@@ -10,6 +10,7 @@ import Data.List (sortBy)
 import Data.Ord (comparing, Down (..))
 import Data.Semigroup ((<>))
 import Data.Text (Text)
+import Data.Time (getCurrentTime)
 import Options.Applicative
 import Path
 import Path.IO
@@ -140,7 +141,8 @@ addReport buildUrl metadataPath optBuildLog optPerPackageLogs target outputDir =
   BuildInfo {..} <- B.readFile metadataPath >>=
     removeEither . Aeson.eitherDecodeStrict'
   ensureDir outputDir
-  item <- mkHistoryItem target biSha1 buildUrl
+  utcTime <- getCurrentTime
+  item <- mkHistoryItem target biSha1 buildUrl utcTime
   let rpath = outputDir </> reportPath item
       hpath = historyPath outputDir
       lpath = latestBuildPath outputDir
