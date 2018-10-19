@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Stackage.HEAD.Site.HTML
   ( overviewP
@@ -31,6 +32,7 @@ import Stackage.HEAD.Site.Resource
 import Stackage.HEAD.Site.Type
 import Stackage.HEAD.Trac
 import Text.URI (URI)
+import Text.Heredoc
 import qualified Data.HashSet    as HS
 import qualified Data.Map.Strict as M
 import qualified Text.URI        as URI
@@ -100,7 +102,11 @@ buildP BuildPageArgs {..} = withDefault "Build results" $ do
   forM_ (M.lookup bpaItem bpaDiffTable) $ \(olderItem, _) -> do
     diffUrl <- reifyLocation (diffL olderItem bpaItem)
     btnLink diffUrl "Diff with prev build"
-  table_ [class_ "table table-sm"] $ do
+  div_ [class_ "form-check"] $ do
+    input_ [type_ "checkbox", id_ "only-failing",
+            class_ "form-check-input"]
+    label_ [for_ "only-failing", class_ "form-check-label"] "show only failing packages"
+  table_ [id_ "package-table", class_ "table table-sm"] $ do
     thead_ . tr_ $ do
       th_ [scope_ "col"] "Package"
       th_ [scope_ "col"] "Build"
@@ -112,7 +118,7 @@ buildP BuildPageArgs {..} = withDefault "Build results" $ do
               BuildFailure n   ->
                 ( "failing, blocking " <> toHtml (show n)
                 , "no info"
-                , [class_ "table-danger"]
+                , [class_ "table-danger failing"]
                 )
               BuildUnreachable ->
                 ( "unreachable"
@@ -134,6 +140,22 @@ buildP BuildPageArgs {..} = withDefault "Build results" $ do
           buildSummary
           when (HS.member packageName bpaFlakyPkgs) " [flaky]"
         td_ testSummary
+  script_ [here|
+    var only_failing_checkbox = document.getElementById("only-failing");
+    function display_failing() {
+      var rows = document.getElementById("package-table").tBodies[0].rows;
+      var i, len;
+      for (i = 0, len = rows.length; i < len; ++i) {
+        var row = rows[i];
+        if (!row.classList.contains("failing")) {
+          rows[i].style.display = only_failing_checkbox.checked ? "none" : "table-row";
+        }
+      }}
+    only_failing_checkbox.onchange = display_failing;
+    // This is necessary because Mozilla persists the value of a checkbox;
+    // therefore it might already be checked when the window loads.
+    display_failing();
+    |]
 
 data DiffPageArgs = DiffPageArgs
   { dpaOlderItem :: !HistoryItem
