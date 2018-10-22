@@ -62,24 +62,24 @@ jobs:
           name: Build stack programs
           command: |
             set -e
-            stack setup
-            stack build
+            stack install stackage-curator
+            stack install
       - run:
           name: Patching build plan to use custom URLs
           command: |
-            stack exec fix-build-plan -- $BUILD_PLAN.yaml custom-source-urls.yaml
+            fix-build-plan $BUILD_PLAN.yaml custom-source-urls.yaml
       - run:
           name: Execute the build plan
           command: |
             set +e
-            stack exec stackage-head -- already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --outdir $HOME/build-reports
+            stackage-head already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --outdir $HOME/build-reports
             already_seen=$?
             set -e
             if [ $already_seen -eq 0 ] ; then
               stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
-              stack exec stackage-head -- add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
+              stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
             fi
-            stack exec stackage-head -- truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
+            stackage-head truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
       - store_artifacts:
           path: "build.log"
       - store_artifacts:
@@ -100,7 +100,7 @@ jobs:
       - run:
           name: Generate static site with the results
           command: |
-            stack exec stackage-head -- generate-site --site-dir $HOME/site $FLAKY_PKGS --outdir $HOME/build-reports
+            stackage-head generate-site --site-dir $HOME/site $FLAKY_PKGS --outdir $HOME/build-reports
       - run:
           name: Upload the site to S3 bucket
           command: |
@@ -111,7 +111,7 @@ jobs:
       - run:
           name: Diff build results
           command: |
-            stack exec stackage-head -- diff $FLAKY_PKGS --outdir $HOME/build-reports
+            stackage-head diff $FLAKY_PKGS --outdir $HOME/build-reports
 
 workflows:
   version: 2
