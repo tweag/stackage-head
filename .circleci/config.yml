@@ -26,7 +26,7 @@ jobs:
   scheduled_build:
     resource_class: xlarge
     docker:
-      - image: mrkkrp/stackage-head:0.3.1
+      - image: rctwg/stackage-head:0.3.2
     environment:
       BUILD_PLAN: nightly-2018-09-26
       JOBS: 9
