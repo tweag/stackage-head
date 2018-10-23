@@ -62,8 +62,8 @@ jobs:
           name: Build stack programs
           command: |
             set -e
-            stack install stackage-curator
-            stack install
+            stack --no-terminal install stackage-curator
+            stack --no-terminal install
       - run:
           name: Patching build plan to use custom URLs
           command: |
