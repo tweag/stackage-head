@@ -59,21 +59,11 @@ jobs:
             - stack-work-{{ checksum "stack.yaml" }}
             - stack-work-
       - run:
-          name: Build stack programs
-          command: |
-            set -e
-            stack install stackage-curator
-            stack install
-      - run:
-          name: Patching build plan to use custom URLs
-          command: |
-            fix-build-plan $BUILD_PLAN.yaml custom-source-urls.yaml
-      - run:
           name: Execute the build plan
           command: |
-            stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
-            stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
-            stackage-head truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
+            pwd
+            ls
+            ls ~
       - store_artifacts:
           path: "build.log"
       - store_artifacts:
@@ -81,7 +71,10 @@ jobs:
       - run:
           name: Package build-reports
           command: |
+            pwd
             tar -C "$HOME" -cJf build-reports.tar.xz build-reports
+            ls
+            ls ~
       - store_artifacts:
           path: "/home/circleci/build-reports.tar.xz"
       - save_cache:
