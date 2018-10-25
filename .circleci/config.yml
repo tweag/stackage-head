@@ -87,10 +87,13 @@ jobs:
       - store_artifacts:
           path: "/home/circleci/build-reports/latest.csv"
       - run:
-          name: Package build-reports
+          name: Package build reports and logs
           command: |
+            set -x
             cd
-            tar cJf build-reports.tar.xz build-reports
+            tar cf build-reports.tar build-reports
+            tar rf build-reports.tar -C project logs
+            xz build-reports.tar
       - store_artifacts:
           path: "/home/circleci/build-reports.tar.xz"
       - save_cache:
