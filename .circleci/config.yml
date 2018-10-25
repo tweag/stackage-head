@@ -71,6 +71,7 @@ jobs:
             fix-build-plan $BUILD_PLAN.yaml custom-source-urls.yaml
       - run:
           name: Execute the build plan
+          no_output_timeout: "3h"
           command: |
             stack --version
             set +e
@@ -78,7 +79,7 @@ jobs:
             already_seen=$?
             set -e
             if [ $already_seen -eq 0 ] ; then
-              stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v 2>&1 | tee build.log  || true
+              stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v >build.log 2>&1 || true
               stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
             fi
             stackage-head truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
