@@ -45,6 +45,7 @@ overviewP items diffTable = withDefault "Overview" $ do
   table_ [class_ "table table-sm"] $ do
     thead_ . tr_ $ do
       th_ [scope_ "col"] "Build (newer first)"
+      th_ [scope_ "col", title_ explain_epoch] "Epoch"
       th_ [scope_ "col"] "Date/time of build"
       th_ [scope_ "col"] "Diff"
     forM_ items $ \item -> do
@@ -54,6 +55,7 @@ overviewP items diffTable = withDefault "Overview" $ do
       case M.lookup item diffTable of
         Nothing -> tr_ $ do
           td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
+          td_ . toHtml . show $ hitemEpoch item
           td_ itemDate
           td_ "no info"
         Just (olderItem, (innocent, suspicious)) -> do
@@ -70,6 +72,7 @@ overviewP items diffTable = withDefault "Overview" $ do
           diffUrl <- reifyLocation (diffL olderItem item)
           tr_ classes $ do
             td_ $ a_ [href_ buildUrl] (toHtml $ hitemPretty item)
+            td_ . toHtml . show $ hitemEpoch item
             td_ itemDate
             td_ $ a_ [href_ diffUrl]  diffText
   p_ [class_ "text-muted"] $ do
@@ -77,6 +80,10 @@ overviewP items diffTable = withDefault "Overview" $ do
       "This static site has been generated automatically, see " <>
       ("the repo of the Stackage HEAD project here: " :: Text)
     a_ [href_ githubRepoUrl] (toHtml githubRepoUrl)
+  where
+    explain_epoch :: Text
+    explain_epoch = [here|Epoch is incremented whenever something other than
+      the stackage snapshot and the GHC build are changed.|]
 
 data BuildPageArgs = BuildPageArgs
   { bpaItem :: !HistoryItem

@@ -72,7 +72,8 @@ optionsParser = Options
            , metavar "LOG-DIR"
            , help "Location of directory with per-package build logs"
            ]
-           <*> targetOpt)
+           <*> targetOpt
+           <*> epochOpt)
      (progDesc "Add a new report to the history")) <>
    command "diff"
     (info (diffReports
@@ -116,6 +117,12 @@ optionsParser = Options
       , metavar "TARGET"
       , help "Target name, without extension (lts-x.y, nightly-yyyy-mm-dd)"
       ]
+    epochOpt :: Parser Epoch
+    epochOpt = (option auto . mconcat)
+      [ long "epoch"
+      , metavar "INT"
+      , help "The epoch number"
+      ]
     flakyPkgsOpt = toPackageNameSet <$> many ((strOption . mconcat)
       [ long "flaky"
       , metavar "PKG"
@@ -135,14 +142,15 @@ addReport
   -> FilePath          -- ^ Location of build log
   -> Maybe FilePath    -- ^ Location of per-package build logs
   -> Text              -- ^ Target
+  -> Epoch             -- ^ The build epoch
   -> Path Abs Dir      -- ^ Output directory containing build reports
   -> IO ()
-addReport buildUrl metadataPath optBuildLog optPerPackageLogs target outputDir = do
+addReport buildUrl metadataPath optBuildLog optPerPackageLogs target epoch outputDir = do
   BuildInfo {..} <- B.readFile metadataPath >>=
     removeEither . Aeson.eitherDecodeStrict'
   ensureDir outputDir
   utcTime <- getCurrentTime
-  item <- mkHistoryItem target biSha1 buildUrl utcTime
+  item <- mkHistoryItem target biSha1 buildUrl utcTime epoch
   let rpath = outputDir </> reportPath item
       hpath = historyPath outputDir
       lpath = latestBuildPath outputDir

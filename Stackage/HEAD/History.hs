@@ -3,10 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Stackage.HEAD.History
   ( -- * History Item
     HistoryItem
+  , Epoch
   , HistoryItemException
   , mkHistoryItem
   , hitemPretty
@@ -17,6 +20,7 @@ module Stackage.HEAD.History
   , hitemCommit
   , hitemBuildUrl
   , hitemUtcTime
+  , hitemEpoch
   , cabalConfigUrl
   , ghcCommitUrl
   -- * Build history
@@ -70,17 +74,25 @@ data HistoryItem = HistoryItem
   { historyItemTarget :: !Text -- ^ Target name
   , historyItemSha1 :: !Text -- ^ GHC commit SHA1
   , historyItemBuildUrl :: !URI -- ^ Link to the build
-  , historyItemUtcTime :: !UTCTime
+  , historyItemUtcTime :: !UTCTime -- ^ Time of the build
+  , historyItemEpoch :: !Epoch
+      -- ^ The epoch is used to distinguish builds that use the same GHC
+      -- and snapshot but differ in some other way.
   } deriving (Generic)
 
+newtype Epoch = Epoch Int
+  deriving newtype (Show, Read, Eq, Ord)
+
 instance Eq HistoryItem where
-  HistoryItem t0 c0 _ _ == HistoryItem t1 c1 _ _ = t0 == t1 && c0 == c1
+  h0 == h1 = compare h0 h1 == EQ
 
 instance Ord HistoryItem where
-  HistoryItem t0 c0 _ _ `compare` HistoryItem t1 c1 _ _ =
-    case t0 `compare` t1 of
-      EQ -> c0 `compare` c1
-      r  -> r
+  HistoryItem t0 c0 _ _ e0 `compare` HistoryItem t1 c1 _ _ e1 =
+    mconcat
+      [ compare e0 e1 -- the epoch has higher priority in comparison
+      , compare t0 t1
+      , compare c0 c1
+      ]
 
 instance Csv.FromRecord HistoryItem where
   parseRecord v = do
@@ -88,8 +100,9 @@ instance Csv.FromRecord HistoryItem where
     target   <- v Csv..! 0
     commit   <- v Csv..! 1
     buildUrl <- (v Csv..! 2) >>= fromMonadThrow . URI.mkURI
-    utcTime <- (v Csv..! 3) >>= maybe (fail "Cannot parse UTCTime") return . readMaybe
-    fromMonadThrow (mkHistoryItem target commit buildUrl utcTime)
+    utcTime  <- (v Csv..! 3) >>= maybe (fail "Cannot parse UTCTime") return . readMaybe
+    epoch    <- (v Csv..! 4) >>= maybe (fail "Cannot parse the epoch") return . readMaybe
+    fromMonadThrow (mkHistoryItem target commit buildUrl utcTime epoch)
 
 instance Csv.ToRecord HistoryItem where
   toRecord HistoryItem {..} = Csv.record
@@ -97,6 +110,7 @@ instance Csv.ToRecord HistoryItem where
     , Csv.toField historyItemSha1
     , Csv.toField (URI.render historyItemBuildUrl)
     , Csv.toField (show historyItemUtcTime)
+    , Csv.toField (show historyItemEpoch)
     ]
 
 -- | Exception that is thrown when 'HistoryItem' cannot be constructed.
@@ -119,10 +133,11 @@ mkHistoryItem :: MonadThrow m
   -> Text              -- ^ Commit SHA1
   -> URI               -- ^ Link to the build
   -> UTCTime           -- ^ Time of the build
+  -> Epoch             -- ^ The epoch
   -> m HistoryItem
-mkHistoryItem target sha1 buildUrl utcTime =
+mkHistoryItem target sha1 buildUrl utcTime epoch =
   maybe (throwM $ InvalidHistoryItem target sha1 buildUrl) return $ do
-    let item = HistoryItem target sha1 buildUrl utcTime
+    let item = HistoryItem target sha1 buildUrl utcTime epoch
     -- Assert that reportPath is obtainable
     void (reportPathMaybe item)
     -- Assert that logPath is obtainable
@@ -136,7 +151,8 @@ mkHistoryItem target sha1 buildUrl utcTime =
 -- | Get textual representation of a 'HistoryItem'.
 
 hitemPretty :: HistoryItem -> Text
-hitemPretty (HistoryItem target sha1 _ _) = target <> "-" <> sha1
+hitemPretty (HistoryItem target sha1 _ _ epoch) = target <> "-" <> sha1 <>
+  "-" <> (T.pack . show $ epoch)
 
 -- | Convert 'HistoryItem' to a 'String'.
 
@@ -184,6 +200,10 @@ hitemBuildUrl = historyItemBuildUrl
 -- | Item's build date/time.
 hitemUtcTime :: HistoryItem -> UTCTime
 hitemUtcTime = historyItemUtcTime
+
+-- | Item's epoch.
+hitemEpoch :: HistoryItem -> Epoch
+hitemEpoch = historyItemEpoch
 
 ----------------------------------------------------------------------------
 -- Build history

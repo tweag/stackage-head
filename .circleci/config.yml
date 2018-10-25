@@ -49,7 +49,7 @@ jobs:
             curl https://raw.githubusercontent.com/fpco/stackage-nightly/master/$BUILD_PLAN.yaml --output $BUILD_PLAN.yaml
       - restore_cache:
           keys:
-            - build-reports-2-
+            - build-reports-3-
       - restore_cache:
           keys:
             - stack-home-{{ checksum "stack.yaml" }}
@@ -80,7 +80,8 @@ jobs:
             set -e
             if [ $already_seen -eq 0 ] ; then
               stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v >build.log 2>&1 || true
-              stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --outdir $HOME/build-reports
+              EPOCH="$(grep -Ev '^(#|[[:space:]]*$)' epoch.txt)"
+              stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --epoch "$EPOCH" --outdir $HOME/build-reports
             fi
             stackage-head truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
       - store_artifacts:
@@ -107,7 +108,7 @@ jobs:
           # This ensures that we push to the cache on every commit. If the
           # part with SHA1 is omitted, CircleCI may get too smart and skip
           # saving cache.
-          key: build-reports-2-{{ .BuildNum }}
+          key: build-reports-3-{{ .BuildNum }}
           paths:
             - /home/circleci/build-reports
       - run:

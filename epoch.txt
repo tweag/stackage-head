@@ -1,0 +1,8 @@
+# The epoch is a single integer.
+#
+# We increment it whenever something other than the snapshot and the ghc version
+# changes. For example, it might be a bug fixed in stackage-head itself or
+# a custom version of the package (i.e. different from the one in the stackage
+# snapshot; see custom-source-urls.yaml).
+
+2
