@@ -91,7 +91,7 @@ jobs:
             set -x
             cd
             tar cf build-reports.tar build-reports
-            tar rf build-reports.tar -C project logs
+            [ -d project/logs ] && tar rf build-reports.tar -C project logs
             xz build-reports.tar
       - store_artifacts:
           path: "/home/circleci/build-reports.tar.xz"
