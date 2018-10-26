@@ -99,7 +99,8 @@ optionsParser = Options
    command "already-seen"
      (info (alreadySeen
              <$> ghcMetadataOpt
-             <*> targetOpt)
+             <*> targetOpt
+             <*> epochOpt)
        (progDesc "Return exit code 1 if given target/commit combo is already newest in history.")))
   <*> (strOption . mconcat)
     [ long "outdir"
@@ -289,20 +290,21 @@ generateSite siteDirRaw flakyPkgs reportsDir = do
 alreadySeen
   :: FilePath          -- ^ Location of metadata JSON file
   -> Text              -- ^ Target
+  -> Epoch             -- ^ Build epoch
   -> Path Abs Dir      -- ^ Output directory containing build reports
   -> IO ()
-alreadySeen optMetadata target outputDir = do
+alreadySeen optMetadata target epoch outputDir = do
   BuildInfo {..} <- B.readFile optMetadata >>=
     removeEither . Aeson.eitherDecodeStrict'
-  item <- newestHistoryItem <$>
-    (loadHistory (historyPath outputDir) >>= removeEither)
-  if (hitemTarget <$> item) == Just target &&
-     (hitemCommit <$> item) == Just biSha1
+  history <- loadHistory (historyPath outputDir) >>= removeEither
+  utcTime <- getCurrentTime
+  this_item <- mkHistoryItem target biSha1 URI.emptyURI utcTime epoch
+  if any (== this_item) (historyItems history)
     then do
-         putStrLn "The combination of target and commit is already in history"
+         putStrLn "The combination of target, commit and epoch is already in history"
          exitFailure
     else do
-         putStrLn "The combination of target and commit is new to me"
+         putStrLn "The combination of target, commit and epoch is new to me"
          exitSuccess
 
 ----------------------------------------------------------------------------

@@ -72,14 +72,12 @@ jobs:
           name: Execute the build plan
           no_output_timeout: "3h"
           command: |
-            set +e
-            stackage-head already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --outdir $HOME/build-reports
-            already_seen=$?
-            set -e
-            if [ $already_seen -eq 0 ] ; then
+            EPOCH="$(grep -Ev '^(#|[[:space:]]*$)' epoch.txt)"
+            if
+              stackage-head already-seen --target $BUILD_PLAN --ghc-metadata metadata.json --epoch "$EPOCH" --outdir $HOME/build-reports
+            then
               stack update # for #29
               stackage-curator make-bundle --allow-newer --jobs $JOBS --plan-file $BUILD_PLAN.yaml --docmap-file docmap-file.yaml --target $BUILD_PLAN --skip-haddock --skip-hoogle --skip-benches --no-rebuild-cabal -v >build.log 2>&1 || true
-              EPOCH="$(grep -Ev '^(#|[[:space:]]*$)' epoch.txt)"
               stackage-head add --build-url $CIRCLE_BUILD_URL --ghc-metadata metadata.json --build-log build.log --build-per-package-dir logs/nightly --target $BUILD_PLAN --epoch "$EPOCH" --outdir $HOME/build-reports
             fi
             stackage-head truncate --history-length $HISTORY_LENGTH --outdir $HOME/build-reports
