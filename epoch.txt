@@ -5,4 +5,4 @@
 # a custom version of the package (i.e. different from the one in the stackage
 # snapshot; see custom-source-urls.yaml).
 
-2
+3
